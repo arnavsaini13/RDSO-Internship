@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search Documents - BDMS{% endblock %}
+
+{% block content %}
+<h1 class="display-5 fw-bold mb-4" style="color: var(--government-dark);">
+    <i class="bi bi-search"></i> Search Documents
+</h1>
+
+<!-- Search Form -->
+<div class="card border-0 shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Search & Filter</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="search-form">
+            <div class="row">
+                <div class="col-lg-8 mb-3">
+                    <label for="search_query" class="form-label">Search Query</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" name="search_query" 
+                               placeholder="Search by barcode, title, or content..." value="{{ request.GET.search_query|default:'' }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <label for="search_type" class="form-label">Search Type</label>
+                    <select class="form-select form-select" name="search_type">
+                        <option value="">All Fields</option>
+                        <option value="barcode" {% if request.GET.search_type == 'barcode' %}selected{% endif %}>Barcode</option>
+                        <option value="title" {% if request.GET.search_type == 'title' %}selected{% endif %}>Title</option>
+                        <option value="content" {% if request.GET.search_type == 'content' %}selected{% endif %}>Content</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="department" class="form-label">Department</label>
+                    <select class="form-select" name="department">
+                        <option value="">All Departments</option>
+                        {% for dept, label in department_choices %}
+                            <option value="{{ dept }}" {% if request.GET.department == dept %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat, label in category_choices %}
+                            <option value="{{ cat }}" {% if request.GET.category == cat %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="PENDING" {% if request.GET.status == 'PENDING' %}selected{% endif %}>Pending</option>
+                        <option value="VERIFIED" {% if request.GET.status == 'VERIFIED' %}selected{% endif %}>Verified</option>
+                        <option value="APPROVED" {% if request.GET.status == 'APPROVED' %}selected{% endif %}>Approved</option>
+                        <option value="ARCHIVED" {% if request.GET.status == 'ARCHIVED' %}selected{% endif %}>Archived</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Apply Filters
+                </button>
+                <a href="{% url 'documents:search_documents' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Search Results -->
+{% if search_results %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        Found <strong>{{ search_results|length }}</strong> document(s)
+        {% if request.GET.search_query %}
+            for "<strong>{{ request.GET.search_query }}</strong>"
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Title</th>
+                            <th>Department</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Uploaded By</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in search_results %}
+                        <tr>
+                            <td>
+                                <code style="color: var(--government-blue); font-weight: 600;">{{ document.barcode_value }}</code>
+                            </td>
+                            <td>
+                                <strong>{{ document.title|truncatewords:4 }}</strong>
+                            </td>
+                            <td>{{ document.get_department_display }}</td>
+                            <td>{{ document.get_category_display }}</td>
+                            <td>
+                                {% if document.status == 'PENDING' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% elif document.status == 'VERIFIED' %}
+                                    <span class="badge badge-verified">Verified</span>
+                                {% elif document.status == 'APPROVED' %}
+                                    <span class="badge badge-approved">Approved</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ document.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ document.uploaded_by.username }}</td>
+                            <td>{{ document.uploaded_at|date:'d M, Y' }}</td>
+                            <td>
+                                <a href="{% url 'documents:document_detail' document.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search_query %}&search_query={{ request.GET.search_query }}{% endif %}">
+                        First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search_query %}&search_query={{ request.GET.search_query }}{% endif %}">
+                        Previous
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="#">{{ num }}</a>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.search_query %}&search_query={{ request.GET.search_query }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search_query %}&search_query={{ request.GET.search_query }}{% endif %}">
+                        Next
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search_query %}&search_query={{ request.GET.search_query }}{% endif %}">
+                        Last
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+{% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        {% if request.GET.search_query %}
+            No documents found for "<strong>{{ request.GET.search_query }}</strong>"
+        {% else %}
+            Use the search form above to find documents
+        {% endif %}
+    </div>
+{% endif %}
+
+{% endblock %}

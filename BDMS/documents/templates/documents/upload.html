@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Document - BDMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <h1 class="display-5 fw-bold mb-4" style="color: var(--government-dark);">
+            <i class="bi bi-cloud-upload"></i> Upload Document
+        </h1>
+
+        <div class="card border-0 shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Document Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="needs-validation" id="uploadForm">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Document Title <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                            {{ form.department }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
+                            {{ form.category }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description }}
+                        <small class="text-muted">Provide a brief description of the document</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pdf_file" class="form-label">PDF File <span class="text-danger">*</span></label>
+                        <div class="file-upload-area" style="cursor: pointer;">
+                            {{ form.pdf_file }}
+                            <i class="bi bi-cloud-upload"></i>
+                            <p class="mb-2">
+                                <strong>Click to select or drag PDF file here</strong>
+                            </p>
+                            <small class="text-muted">
+                                Maximum file size: 10 MB | Supported format: PDF only
+                            </small>
+                            <div id="fileName" class="mt-2 text-success d-none"></div>
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-cloud-upload"></i> Upload Document
+                        </button>
+                        <a href="{% url 'documents:dashboard' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="card border-0 shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Upload Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Upload only <strong>PDF files</strong> (no images or other formats)</li>
+                    <li>Maximum file size: <strong>10 MB</strong></li>
+                    <li>Provide a clear and descriptive title</li>
+                    <li>Select appropriate department and category</li>
+                    <li>A unique <strong>barcode</strong> will be automatically generated</li>
+                    <li>Text will be extracted for search functionality</li>
+                    <li><strong>Scanned PDFs</strong> will be processed with OCR</li>
+                    <li>Initial status: <strong>Pending</strong> (requires verification)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('id_pdf_file').addEventListener('change', function(e) {
+    const fileName = document.getElementById('fileName');
+    if (this.files.length > 0) {
+        fileName.textContent = '✓ Selected: ' + this.files[0].name;
+        fileName.classList.remove('d-none');
+    } else {
+        fileName.classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}

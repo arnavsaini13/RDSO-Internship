@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan Barcode - BDMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                <i class="bi bi-upc-scan"></i> Barcode Scanner
+            </h2>
+            <p class="text-muted">Scan material barcode using camera or upload image to find material details</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Camera Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-camera"></i> Camera Capture
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <video id="cameraFeed" class="w-100 border rounded mb-3" style="background: #000; display:none;"></video>
+                        <canvas id="canvasCapture" style="display:none;"></canvas>
+                        
+                        <div id="cameraPlaceholder" class="bg-light p-4 text-center rounded mb-3">
+                            <i class="bi bi-camera2" style="font-size: 3rem; color: #999;"></i>
+                            <p class="text-muted mt-2">Camera will appear here</p>
+                        </div>
+                    </div>
+
+                    <div class="btn-group w-100 mb-3" role="group">
+                        <button type="button" class="btn btn-success btn-sm" id="startCameraBtn">
+                            <i class="bi bi-camera"></i> Start Camera
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="stopCameraBtn" disabled>
+                            <i class="bi bi-stop-circle"></i> Stop Camera
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100 mb-3" id="captureBtn" disabled>
+                        <i class="bi bi-capture"></i> Capture & Scan
+                    </button>
+
+                    <div id="cameraError" class="alert alert-danger d-none" role="alert">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span id="cameraErrorText"></span>
+                    </div>
+
+                    <small class="text-muted d-block">
+                        <i class="bi bi-info-circle"></i>
+                        Click "Start Camera" to enable your webcam, then position the barcode in frame and click "Capture & Scan"
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload"></i> Upload Image
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="barcodeImage" class="form-label">Select Barcode Image</label>
+                            <input type="file" class="form-control" id="barcodeImage" name="barcode_image" accept="image/*" required>
+                            <small class="text-muted d-block mt-2">Accepted formats: JPG, PNG, GIF, WebP</small>
+                        </div>
+
+                        <div id="imagePreview" class="mb-3" style="display:none;">
+                            <img id="previewImg" class="img-thumbnail w-100" alt="Preview">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Scan Uploaded Image
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    {% if error_message %}
+    <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Error:</strong> {{ error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    {% if material %}
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-check-circle"></i> Material Found!
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Material ID</h6>
+                    <h5>{{ material.material_id }}</h5>
+
+                    <h6 class="text-muted mt-3">Material Name</h6>
+                    <h5>{{ material.material_name }}</h5>
+
+                    <h6 class="text-muted mt-3">Vendor</h6>
+                    <p>{{ material.vendor_name }}</p>
+
+                    <h6 class="text-muted mt-3">Date Received</h6>
+                    <p>{{ material.date_received|date:"d M Y" }}</p>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="text-muted">Current Balance</h6>
+                    <h4 class="text-success">{{ material.balance.available_quantity }} units</h4>
+
+                    <h6 class="text-muted mt-3">Category</h6>
+                    <p>{{ material.category|default:"N/A" }}</p>
+
+                    <h6 class="text-muted mt-3">Batch Number</h6>
+                    <p>{{ material.batch_number|default:"N/A" }}</p>
+
+                    <h6 class="text-muted mt-3">HSN Code</h6>
+                    <p>{{ material.hsn_code|default:"N/A" }}</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <a href="{% url 'documents:material_detail' material.id %}" class="btn btn-info btn-sm w-100">
+                        <i class="bi bi-eye"></i> View Full Details
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'documents:barcode_view' material.material_id %}" class="btn btn-secondary btn-sm w-100">
+                        <i class="bi bi-upc"></i> View Barcode
+                    </a>
+                </div>
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <a href="{% url 'documents:take_material' material.material_id %}" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-arrow-up-circle"></i> Record Take
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'documents:return_material' material.material_id %}" class="btn btn-danger btn-sm w-100">
+                        <i class="bi bi-arrow-down-circle"></i> Record Return
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Scans -->
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> How to Use
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Camera Method</h6>
+                    <ol class="small">
+                        <li>Click "Start Camera" button</li>
+                        <li>Allow browser access to camera</li>
+                        <li>Position barcode in center of frame</li>
+                        <li>Click "Capture & Scan" to detect</li>
+                        <li>Material details will appear below</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h6>Upload Method</h6>
+                    <ol class="small">
+                        <li>Click "Select Barcode Image"</li>
+                        <li>Choose JPG or PNG image file</li>
+                        <li>Click "Scan Uploaded Image"</li>
+                        <li>System will detect barcode</li>
+                        <li>Material details will appear below</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #cameraFeed {
+        max-height: 400px;
+        object-fit: cover;
+    }
+    
+    .btn-group .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 8px;
+    }
+    
+    .card-header {
+        border-radius: 8px 8px 0 0;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const stopCameraBtn = document.getElementById('stopCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const cameraFeed = document.getElementById('cameraFeed');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const canvasCapture = document.getElementById('canvasCapture');
+    const cameraError = document.getElementById('cameraError');
+    const cameraErrorText = document.getElementById('cameraErrorText');
+    
+    let stream = null;
+
+    // Start Camera
+    startCameraBtn.addEventListener('click', async function() {
+        try {
+            cameraError.classList.add('d-none');
+            
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            
+            cameraFeed.srcObject = stream;
+            cameraFeed.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            
+            startCameraBtn.disabled = true;
+            stopCameraBtn.disabled = false;
+            captureBtn.disabled = false;
+            
+        } catch (err) {
+            cameraErrorText.textContent = 'Unable to access camera: ' + err.message;
+            cameraError.classList.remove('d-none');
+        }
+    });
+
+    // Stop Camera
+    stopCameraBtn.addEventListener('click', function() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        cameraFeed.style.display = 'none';
+        cameraPlaceholder.style.display = 'block';
+        
+        startCameraBtn.disabled = false;
+        stopCameraBtn.disabled = true;
+        captureBtn.disabled = true;
+    });
+
+    // Capture from Camera
+    captureBtn.addEventListener('click', async function() {
+        if (!cameraFeed.srcObject) return;
+        
+        // Set canvas dimensions
+        canvasCapture.width = cameraFeed.videoWidth;
+        canvasCapture.height = cameraFeed.videoHeight;
+        
+        // Draw video frame to canvas
+        const context = canvasCapture.getContext('2d');
+        context.drawImage(cameraFeed, 0, 0);
+        
+        // Get canvas data
+        const canvasData = canvasCapture.toDataURL('image/png');
+        
+        // Send to server
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Scanning...';
+        
+        try {
+            const response = await fetch('{% url "documents:scan_barcode" %}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'canvas_data': canvasData
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show success message
+                const successAlert = document.createElement('div');
+                successAlert.className = 'alert alert-success alert-dismissible fade show mt-4';
+                successAlert.innerHTML = `
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Success!</strong> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.container').insertBefore(successAlert, document.querySelector('.card'));
+                
+                // Reload page after 2 seconds to show material details
+                setTimeout(() => {
+                    window.location.href = '{% url "documents:scan_barcode" %}?barcode=' + data.barcode;
+                }, 2000);
+            } else {
+                cameraErrorText.textContent = data.error || 'Failed to scan barcode';
+                cameraError.classList.remove('d-none');
+            }
+        } catch (err) {
+            cameraErrorText.textContent = 'Error: ' + err.message;
+            cameraError.classList.remove('d-none');
+        } finally {
+            captureBtn.disabled = false;
+            captureBtn.innerHTML = '<i class="bi bi-capture"></i> Capture & Scan';
+        }
+    });
+
+    // Image Preview
+    const barcodeImage = document.getElementById('barcodeImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    barcodeImage.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImg.src = event.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+
+    // Upload Form
+    const uploadForm = document.getElementById('uploadForm');
+    uploadForm.addEventListener('submit', function(e) {
+        const btn = uploadForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Scanning...';
+    });
+});
+</script>
+{% endblock %}
