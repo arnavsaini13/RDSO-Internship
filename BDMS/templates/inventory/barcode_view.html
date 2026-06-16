@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Material Barcode - {{ material.material_id }}{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <h2 class="fw-bold mb-4" style="color: var(--primary-navy);"><i class="bi bi-printer"></i> Print Material Barcode</h2>
+            
+            <!-- Standard printable card badge -->
+            <div class="card border-0 shadow-sm p-4 mb-4 mx-auto" id="printable-barcode-card" style="max-width: 450px; border-radius: 12px; border: 2px solid var(--border-color) !important;">
+                <div class="d-flex align-items-center justify-content-between pb-3 border-bottom mb-3">
+                    <strong style="color: var(--primary-navy); letter-spacing: 0.5px;">RDSO IIMS STOCK LABEL</strong>
+                    <span class="badge bg-light text-dark border" style="font-family: monospace;">{{ material.material_id }}</span>
+                </div>
+                
+                <div class="p-4 bg-light border rounded mb-3 d-flex flex-column align-items-center justify-content-center">
+                    {% if material.barcode_image %}
+                        <img src="{{ material.barcode_image.url }}" alt="Material Barcode" class="img-fluid mb-2" style="max-height: 80px;">
+                    {% else %}
+                        <i class="bi bi-qr-code display-3 mb-2 text-muted"></i>
+                    {% endif %}
+                    <strong style="font-family: monospace; font-size: 1.15rem; color: var(--primary-navy);">{{ material.material_id }}</strong>
+                </div>
+
+                <div class="text-start">
+                    <h5 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ material.material_name }}</h5>
+                    <span class="text-muted d-block small mb-2"><i class="bi bi-building"></i> Vendor: {{ material.vendor_name }}</span>
+                    <div class="row small mt-2 pt-2 border-top">
+                        <div class="col-6">
+                            <span class="text-muted d-block font-weight-bold text-uppercase" style="font-size: 0.7rem;">HSN Code</span>
+                            <strong>{{ material.hsn_code|default:"N/A" }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block font-weight-bold text-uppercase" style="font-size: 0.7rem;">Date Intake</span>
+                            <strong>{{ material.date_received|date:"d M Y" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-3">
+                <button onclick="window.print()" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
+                    <i class="bi bi-printer"></i> Print Stock Label
+                </button>
+                <a href="{% url 'documents:barcode_pdf' material.material_id %}" class="btn btn-gov-secondary px-4 py-2">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF Label
+                </a>
+                <a href="{% url 'documents:material_detail' material.id %}" class="btn btn-gov-secondary px-4 py-2">
+                    Back to Workspace
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printable-barcode-card, #printable-barcode-card * {
+        visibility: visible;
+    }
+    #printable-barcode-card {
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        transform: translate(-50%, -50%);
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

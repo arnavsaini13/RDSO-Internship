@@ -1,10 +1,11 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Material, InventoryBalance, InventoryTransaction
 
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ('material_id', 'material_name', 'vendor_name', 'quantity', 'date_received', 'uploaded_by')
+    list_display = ('material_id', 'material_name', 'vendor_name', 'quantity', 'date_received', 'get_uploaded_by', 'view_pdf')
     list_filter = ('category', 'vendor_name', 'date_received', 'uploaded_at')
     search_fields = ('material_id', 'material_name', 'vendor_name', 'batch_number')
     readonly_fields = ('material_id', 'uploaded_at', 'updated_at', 'extracted_data')
@@ -29,6 +30,20 @@ class MaterialAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def get_uploaded_by(self, obj):
+        if obj.uploaded_by:
+            if hasattr(obj.uploaded_by, 'profile') and obj.uploaded_by.profile.username:
+                return obj.uploaded_by.profile.username
+            return obj.uploaded_by.first_name or obj.uploaded_by.username
+        return "-"
+    get_uploaded_by.short_description = 'Uploaded By'
+
+    def view_pdf(self, obj):
+        if obj.receipt_pdf:
+            return format_html('<a href="{}" target="_blank">View PDF</a>', obj.receipt_pdf.url)
+        return "-"
+    view_pdf.short_description = 'Receipt PDF'
 
 
 @admin.register(InventoryBalance)

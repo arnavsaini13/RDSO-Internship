@@ -13,9 +13,20 @@ try:
     import pytesseract
     from PIL import Image
     from pdf2image import convert_from_path
-    from PyPDF2 import PdfReader
 except ImportError:
     pass
+
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    import subprocess
+    import sys
+    print("PyMuPDF (fitz) not found. Auto-installing dependencies via pip...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pymupdf"])
+        import fitz
+    except Exception as e:
+        print(f"Failed to install PyMuPDF: {e}")
 
 
 class PDFAnalyzer:
@@ -27,15 +38,15 @@ class PDFAnalyzer:
         self.extracted_data = {}
     
     def extract_text_from_pdf(self) -> str:
-        """Extract text from PDF using PyPDF2"""
+        """Extract text from PDF using PyMuPDF"""
         try:
-            reader = PdfReader(self.pdf_path)
+            doc = fitz.open(self.pdf_path)
             text = ""
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
+            for page in doc:
+                text += page.get_text() + "\n"
             return text.strip()
         except Exception as e:
-            print(f"Error extracting text with PyPDF2: {e}")
+            print(f"Error extracting text with PyMuPDF: {e}")
             return ""
     
     def extract_text_with_ocr(self) -> str:
@@ -98,15 +109,21 @@ class PDFAnalyzer:
     
     def _extract_material_name(self) -> str:
         """Extract material/product name"""
+        # Prioritize specific labels and filter out generic keywords like 'Details'
         patterns = [
-            r'(?:Item|Product|Material|Description|Article)[\s:]*([^\n]+)',
+            r'(?:Material\s+Name|Product\s+Name|Item\s+Name)[\s:]*([^\n]+)',
+            r'(?:Material|Product)[\s:]*([^\n]+)',
+            r'(?:Item|Description|Article)[\s:]*([^\n]+)',
             r'(?:^|\n)([A-Z][A-Za-z0-9\s]+?)(?:\n|$)',
         ]
         
         for pattern in patterns:
-            match = re.search(pattern, self.text, re.MULTILINE)
+            match = re.search(pattern, self.text, re.MULTILINE | re.IGNORECASE)
             if match:
                 material = match.group(1).strip()
+                # Filter out generic table headers / columns
+                if material.lower() in ['details', 'description', 'specifications', 'invoice', 'receipt', 'item details']:
+                    continue
                 if 5 < len(material) < 255 and not re.match(r'^\d+$', material):
                     return material
         return None
@@ -175,8 +192,9 @@ class PDFAnalyzer:
     
     def _extract_batch_number(self) -> str:
         """Extract batch number"""
+        # Place longer patterns first so that 'Batch No:' matches full name instead of isolating 'No'
         patterns = [
-            r'(?:Batch|Lot|Batch No|Batch Number|Lot No)[\s:]*([A-Za-z0-9\-]+)',
+            r'(?:Batch\s+Number|Batch\s+No|Lot\s+No|Batch|Lot)[\s:]*([A-Za-z0-9\-]+)',
         ]
         
         for pattern in patterns:
@@ -227,8 +245,10 @@ class PDFAnalyzer:
     
     def _extract_invoice_number(self) -> str:
         """Extract invoice number"""
+        # Prioritize exact names to avoid matching isolated slashes from page headers (e.g. 'INVOICE / RECEIPT')
         patterns = [
-            r'(?:Invoice|Bill|PO|Invoice No|Order No)[\s:#]*([A-Za-z0-9\-/]+)',
+            r'(?:Invoice\s+No|Invoice\s+Number|Bill\s+No|Order\s+No|PO\s+Number)[\s:#]*([A-Za-z0-9\-]+)',
+            r'(?:Invoice|Bill|PO|Order)[\s:#]+([A-Za-z0-9\-]{4,})',
         ]
         
         for pattern in patterns:

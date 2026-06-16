@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Material Inventory - BDMS IIMS 1.0{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1" style="color: var(--primary-navy);"><i class="bi bi-box-seam"></i> Registered Material Records</h2>
+                <p class="text-muted mb-0">Total of <strong>{{ page_obj.paginator.count }}</strong> physical materials entered in database.</p>
+            </div>
+            <div>
+                <a href="{% url 'documents:upload_material' %}" class="btn btn-gov-primary">
+                    <i class="bi bi-plus-lg"></i> Intake Material
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter Module -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="search" value="{{ search_q }}" class="form-control border-start-0" placeholder="Search by Material ID, Name, Category, or Vendor invoice...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-gov-primary w-100">
+                            Search Records
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Database Table Card -->
+        <div class="gov-table-card shadow-sm mb-4">
+            <div class="gov-table-header">
+                <h5 class="gov-table-title"><i class="bi bi-table"></i> Materials Master Sheet</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table gov-table">
+                    <thead>
+                        <tr>
+                            <th>Material ID</th>
+                            <th>Material Name</th>
+                            <th>Vendor Invoice</th>
+                            <th>Intake Qty</th>
+                            <th>Storage Depot</th>
+                            <th>Date Received</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mat in page_obj %}
+                        <tr>
+                            <td>
+                                <span class="badge border bg-light text-dark font-weight-bold px-2 py-2" style="font-family: monospace; font-size: 0.85rem;">{{ mat.material_id }}</span>
+                            </td>
+                            <td>
+                                <strong style="color: var(--primary-navy);">{{ mat.material_name }}</strong>
+                            </td>
+                            <td>
+                                <span class="text-muted small"><i class="bi bi-building"></i> {{ mat.vendor_name }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ mat.quantity }} units</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-muted border px-2 py-1"><i class="bi bi-geo-alt"></i> {{ mat.storage_location|default:"Central Depot" }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small"><i class="bi bi-calendar"></i> {{ mat.date_received|date:"d M Y" }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'documents:material_detail' mat.id %}" class="btn btn-sm btn-outline-primary" title="Open Workspace">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <a href="{% url 'documents:barcode_view' mat.material_id %}" class="btn btn-sm btn-outline-dark" title="Print Barcode">
+                                        <i class="bi bi-printer"></i> Print
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox display-4 mb-3 d-block"></i>
+                                No registered materials found matching your search.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="d-flex justify-content-center">
+                <ul class="pagination pagination-sm">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_q %}&search={{ search_q }}{% endif %}">Previous</a></li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if search_q %}&search={{ search_q }}{% endif %}">{{ num }}</a></li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_q %}&search={{ search_q }}{% endif %}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

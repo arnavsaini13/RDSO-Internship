@@ -12,11 +12,9 @@ def create_user_profile(user):
 
 def get_user_role(user):
     """Get user role"""
-    try:
-        profile = user.profile
-        return profile.role
-    except:
-        return 'USER'
+    if user.is_superuser:
+        return 'ADMIN'
+    return 'USER'
 
 
 def get_client_ip(request):

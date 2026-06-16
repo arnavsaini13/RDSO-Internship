@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Registration - BDMS{% endblock %}
+
+{% block content %}
+<div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 280px);">
+    <div class="login-wrapper w-100" style="max-width: 550px;">
+        <div class="card border-0 shadow-lg position-relative overflow-hidden glass-card" style="border-radius: 16px;">
+            <!-- Top brand strip matching tricolor band -->
+            <div style="height: 4px; width: 100%; background: linear-gradient(to right, #ff9933, #ffffff, #128807);"></div>
+            
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="emblem-wrapper mb-3 d-inline-flex justify-content-center align-items-center" style="width: 80px; height: 80px; border-radius: 50%; background: var(--accent-saffron-light); border: 2px solid var(--accent-saffron-border);">
+                        <i class="bi bi-person-plus-fill" style="font-size: 2.2rem; color: var(--accent-saffron);"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: var(--primary-navy);">Complete Profile Details</h3>
+                    <p class="text-muted small">Please complete the registration fields below to finalize access to the portal.</p>
+                </div>
+                
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+                    
+                    <!-- First Name and Last Name -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_first_name" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy); letter-spacing: 0.5px;">First Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0" style="color: var(--primary-navy);"><i class="bi bi-person"></i></span>
+                                <input type="text" name="first_name" id="id_first_name" class="form-control border-start-0 ps-0" placeholder="First Name" value="{{ first_name|default:'' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_last_name" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy); letter-spacing: 0.5px;">Last Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0" style="color: var(--primary-navy);"><i class="bi bi-person"></i></span>
+                                <input type="text" name="last_name" id="id_last_name" class="form-control border-start-0 ps-0" placeholder="Last Name" value="{{ last_name|default:'' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Number -->
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy); letter-spacing: 0.5px;">Contact Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0" style="color: var(--primary-navy);"><i class="bi bi-telephone"></i></span>
+                            <input type="text" name="phone" id="id_phone" class="form-control border-start-0 ps-0" placeholder="e.g. +91 9999999999" value="{{ phone|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <!-- Email Address -->
+                    <div class="mb-4">
+                        <label for="id_email" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy); letter-spacing: 0.5px;">Email Address <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0" style="color: var(--primary-navy);"><i class="bi bi-envelope"></i></span>
+                            <input type="email" name="email" id="id_email" class="form-control border-start-0 ps-0" placeholder="Email Address" value="{{ email|default:'' }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-gov-primary py-2 text-uppercase fw-bold" style="font-size: 0.95rem; letter-spacing: 0.5px;">
+                            Complete Registration & Continue <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer bg-light py-3 border-0 text-center">
+                <span class="text-muted small">Need assistance? Contact the RDSO IT Directorate for support.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(11, 34, 64, 0.15) !important;
+    }
+    .input-group:focus-within .input-group-text {
+        border-color: var(--accent-green);
+        color: var(--accent-green) !important;
+        background-color: #ffffff !important;
+    }
+    .input-group:focus-within .form-control {
+        border-color: var(--accent-green);
+        box-shadow: none;
+    }
+    .input-group-text, .form-control {
+        transition: all 0.2s ease;
+    }
+</style>
+{% endblock %}

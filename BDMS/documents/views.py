@@ -10,6 +10,9 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q, Sum
 from django.core.paginator import Paginator
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.core.files import File
 from decimal import Decimal
 from datetime import datetime, timedelta
 import csv
@@ -79,6 +82,8 @@ def dashboard(request):
         'directorate', flat=True
     ).distinct().count()
     
+    show_popup = request.session.pop('show_password_change_popup', False)
+    
     context = {
         'status': status,
         'recent_materials': recent_materials,
@@ -88,6 +93,7 @@ def dashboard(request):
         'total_takes': total_takes,
         'total_returns': total_returns,
         'total_directorates': directorates,
+        'show_password_change_popup': show_popup,
     }
     
     return render(request, 'inventory/dashboard.html', context)
@@ -104,22 +110,24 @@ def upload_material(request):
             try:
                 receipt_pdf = request.FILES['receipt_pdf']
                 
-                # Save file temporarily to analyze
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
-                    for chunk in receipt_pdf.chunks():
-                        tmp.write(chunk)
-                    tmp_path = tmp.name
+                # Save file to media/temp_uploads/ for seamless flow persistence
+                temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_uploads')
+                os.makedirs(temp_dir, exist_ok=True)
                 
-                # Analyze PDF
-                extracted_data = analyze_receipt_pdf(tmp_path)
-                os.unlink(tmp_path)
+                fs = FileSystemStorage(location=temp_dir)
+                filename = fs.save(receipt_pdf.name, receipt_pdf)
+                file_path = fs.path(filename)
+                
+                # Analyze PDF using our optimized rules
+                extracted_data = analyze_receipt_pdf(file_path)
                 
                 # Store in session for preview/confirmation
                 request.session['pdf_data'] = extracted_data
                 request.session['pdf_file_name'] = receipt_pdf.name
+                request.session['pdf_temp_path'] = os.path.join('temp_uploads', filename)
                 
                 messages.success(request, 'PDF analyzed successfully! Please confirm the extracted data.')
-                return redirect('confirm_material')
+                return redirect('documents:confirm_material')
             
             except Exception as e:
                 messages.error(request, f'Error analyzing PDF: {str(e)}')
@@ -136,31 +144,45 @@ def confirm_material(request):
     
     extracted_data = request.session.get('pdf_data')
     pdf_file_name = request.session.get('pdf_file_name')
+    pdf_temp_path = request.session.get('pdf_temp_path')
     
-    if not extracted_data:
-        messages.error(request, 'No extracted data found. Please upload a receipt.')
-        return redirect('upload_material')
+    if not extracted_data or not pdf_temp_path:
+        messages.error(request, 'No active uploaded document session found. Please upload a receipt.')
+        return redirect('documents:upload_material')
     
     if request.method == 'POST':
-        # Get the receipt PDF from FILES
-        receipt_pdf = request.FILES.get('receipt_pdf')
-        
-        if not receipt_pdf:
-            messages.error(request, 'Receipt PDF is required.')
-            return redirect('upload_material')
-        
         try:
             # Update extracted data from form (user can edit)
-            for key in ['material_name', 'vendor_name', 'quantity', 'date_received']:
+            for key in ['material_name', 'vendor_name', 'quantity', 'date_received', 
+                        'unit_price', 'total_cost', 'batch_number', 'hsn_code', 'description']:
                 if key in request.POST:
                     extracted_data[key] = request.POST[key]
             
-            # Create material
-            material = create_material_from_pdf_data(
-                extracted_data,
-                receipt_pdf,
-                request.user
-            )
+            # Server-side fallback calculation if total_cost is empty/0 but quantity and unit_price are set
+            try:
+                qty = Decimal(str(extracted_data.get('quantity', 0) or 0))
+                price = Decimal(str(extracted_data.get('unit_price', 0) or 0))
+                cost = Decimal(str(extracted_data.get('total_cost', 0) or 0))
+                if (cost == 0 or not extracted_data.get('total_cost')) and qty > 0 and price > 0:
+                    extracted_data['total_cost'] = str(qty * price)
+            except Exception:
+                pass
+            
+            # Load PDF file from local storage using Django File wrapper (seamless, no re-upload required!)
+            absolute_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_temp_path)
+            if not os.path.exists(absolute_pdf_path):
+                messages.error(request, 'Source file could not be found. Please re-upload your invoice.')
+                return redirect('documents:upload_material')
+            
+            with open(absolute_pdf_path, 'rb') as pdf_file:
+                django_file = File(pdf_file, name=pdf_file_name)
+                
+                # Create material
+                material = create_material_from_pdf_data(
+                    extracted_data,
+                    django_file,
+                    request.user
+                )
             
             # Create initial inventory balance
             create_initial_inventory_balance(material)
@@ -176,12 +198,19 @@ def confirm_material(request):
                 ip_address=get_client_ip(request),
             )
             
+            # Clean up the temp file
+            try:
+                os.unlink(absolute_pdf_path)
+            except Exception:
+                pass
+                
             # Clear session
             request.session.pop('pdf_data', None)
             request.session.pop('pdf_file_name', None)
+            request.session.pop('pdf_temp_path', None)
             
             messages.success(request, f'Material {material.material_id} created successfully!')
-            return redirect('material_detail', pk=material.id)
+            return redirect('documents:material_detail', pk=material.id)
         
         except Exception as e:
             messages.error(request, f'Error creating material: {str(e)}')
@@ -260,7 +289,7 @@ def take_material(request, material_id):
             # Check if sufficient stock
             if material.balance.available_quantity < quantity:
                 messages.error(request, f'Insufficient stock! Available: {material.balance.available_quantity}')
-                return redirect('material_detail', pk=material.id)
+                return redirect('documents:material_detail', pk=material.id)
             
             # Update inventory
             success = update_inventory_balance(
@@ -275,7 +304,7 @@ def take_material(request, material_id):
             
             if success:
                 messages.success(request, f'{quantity} units taken by {directorate}')
-                return redirect('material_detail', pk=material.id)
+                return redirect('documents:material_detail', pk=material.id)
             else:
                 messages.error(request, 'Error updating inventory')
     else:
@@ -314,7 +343,7 @@ def return_material(request, material_id):
             
             if success:
                 messages.success(request, f'{quantity} units returned by {directorate}')
-                return redirect('material_detail', pk=material.id)
+                return redirect('documents:material_detail', pk=material.id)
             else:
                 messages.error(request, 'Error updating inventory')
     else:
@@ -409,7 +438,7 @@ def export_inventory(request):
     
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
         messages.error(request, 'Only admins can export data.')
-        return redirect('dashboard')
+        return redirect('documents:dashboard')
     
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="inventory_export.csv"'
@@ -441,7 +470,7 @@ def export_transactions(request):
     
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
         messages.error(request, 'Only admins can export data.')
-        return redirect('dashboard')
+        return redirect('documents:dashboard')
     
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="transactions_export.csv"'
@@ -476,6 +505,14 @@ def scan_barcode(request):
     barcode_data = None
     error_message = None
     
+    # Check if barcode GET parameter is present
+    barcode_get = request.GET.get('barcode')
+    if barcode_get:
+        barcode_data = barcode_get
+        material = get_material_by_barcode(barcode_get)
+        if not material:
+            error_message = f"Material not found for barcode: {barcode_get}"
+            
     if request.method == 'POST':
         # Check if this is a camera capture (AJAX request with canvas data)
         canvas_data = request.POST.get('canvas_data')
@@ -581,7 +618,7 @@ def barcode_pdf(request, material_id):
     
     if not material.barcode_image:
         messages.error(request, "Barcode not generated for this material")
-        return redirect('material_detail', pk=material.id)
+        return redirect('documents:material_detail', pk=material.id)
     
     try:
         # Use ReportLab if available, otherwise just serve the barcode image
@@ -673,11 +710,11 @@ def barcode_pdf(request, material_id):
     except ImportError:
         # If ReportLab not available, just redirect to barcode view
         messages.info(request, "ReportLab not installed. Download barcode image instead.")
-        return redirect('barcode_view', material_id=material_id)
+        return redirect('documents:barcode_view', material_id=material_id)
     
     except Exception as e:
         messages.error(request, f"Error generating PDF: {str(e)}")
-        return redirect('material_detail', pk=material.id)
+        return redirect('documents:material_detail', pk=material.id)
 
 
 @login_required
@@ -689,7 +726,7 @@ def regenerate_barcode_view(request, material_id):
     # Check if user is admin
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
         messages.error(request, "Only admins can regenerate barcodes")
-        return redirect('material_detail', pk=material.id)
+        return redirect('documents:material_detail', pk=material.id)
     
     try:
         success = regenerate_barcode(material)
@@ -699,8 +736,8 @@ def regenerate_barcode_view(request, material_id):
         else:
             messages.error(request, f"Failed to regenerate barcode")
         
-        return redirect('barcode_view', material_id=material_id)
+        return redirect('documents:barcode_view', material_id=material_id)
     
     except Exception as e:
         messages.error(request, f"Error regenerating barcode: {str(e)}")
-        return redirect('material_detail', pk=material.id)
+        return redirect('documents:material_detail', pk=material.id)

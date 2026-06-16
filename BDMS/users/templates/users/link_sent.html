@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verification Link Sent - BDMS{% endblock %}
+
+{% block content %}
+<div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 280px);">
+    <div class="login-wrapper w-100" style="max-width: 520px;">
+        <div class="card border-0 shadow-lg position-relative overflow-hidden glass-card" style="border-radius: 16px;">
+            <!-- Top brand strip matching tricolor band -->
+            <div style="height: 4px; width: 100%; background: linear-gradient(to right, #ff9933, #ffffff, #128807);"></div>
+            
+            <div class="card-body p-5 text-center">
+                <div class="emblem-wrapper mb-4 d-inline-flex justify-content-center align-items-center" style="width: 90px; height: 90px; border-radius: 50%; background: var(--accent-saffron-light); border: 2px solid var(--accent-saffron-border);">
+                    <i class="bi bi-envelope-check-fill" style="font-size: 2.6rem; color: var(--accent-saffron);"></i>
+                </div>
+                
+                <h3 class="fw-bold mb-2" style="color: var(--primary-navy);">Verification Link Sent</h3>
+                <p class="text-muted mb-4">We have sent a secure authentication link to your email address:</p>
+                
+                <div class="p-3 mb-4 bg-light rounded border border-dashed font-monospace fw-bold text-dark fs-6" style="background-color: #fafbfc !important;">
+                    {{ email }}
+                </div>
+                
+                <div class="alert alert-info border-0 text-start small mb-4" style="background-color: #e8f4fd; color: #1d6fa5; border-radius: 10px;">
+                    <h6 class="fw-bold mb-1"><i class="bi bi-info-circle-fill"></i> Important Steps:</h6>
+                    <ul class="mb-0 ps-3">
+                        <li>Do not close this page. Click the verification link directly from your email client.</li>
+                        <li>The link is only valid for <strong>30 minutes</strong>.</li>
+                        <li>If you cannot find the email, please check your <strong>Spam / Junk folder</strong>.</li>
+                    </ul>
+                </div>
+                
+                <p class="text-muted small mb-0">
+                    If there is no mail, please check your Django console logs for standard debugging outputs.
+                </p>
+            </div>
+            
+            <div class="card-footer bg-light py-3 border-0 text-center">
+                <a href="{% url 'users:login' %}" class="fw-bold text-decoration-none small" style="color: var(--accent-green);"><i class="bi bi-arrow-left"></i> Back to Login Page</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(11, 34, 64, 0.15) !important;
+    }
+</style>
+{% endblock %}

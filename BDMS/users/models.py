@@ -4,31 +4,17 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
-ROLE_CHOICES = [
-    ('ADMIN', 'Administrator'),
-    ('USER', 'Regular User'),
-]
-
-DEPARTMENT_CHOICES = [
-    ('HR', 'Human Resources'),
-    ('FINANCE', 'Finance'),
-    ('IT', 'Information Technology'),
-    ('LEGAL', 'Legal'),
-    ('ADMIN', 'Administration'),
-    ('OPERATIONS', 'Operations'),
-    ('PROCUREMENT', 'Procurement'),
-    ('OTHER', 'Other'),
-]
-
-
 class UserProfile(models.Model):
     """Extended user profile model"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='USER')
-    department = models.CharField(max_length=50, choices=DEPARTMENT_CHOICES, blank=True)
+    username = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(max_length=254, blank=True)
+    password = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     designation = models.CharField(max_length=100, blank=True)
+    age = models.IntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    is_temp_password = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -36,7 +22,15 @@ class UserProfile(models.Model):
         verbose_name_plural = 'User Profiles'
     
     def __str__(self):
-        return f"{self.user.username} - {self.role}"
+        return f"{self.username} - {self.email}"
+
+    @property
+    def role(self):
+        return 'ADMIN' if self.user.is_superuser else 'USER'
+
+    @property
+    def get_role_display(self):
+        return 'Administrator' if self.user.is_superuser else 'Regular User'
 
 
 # Signal to automatically create user profile when user is created

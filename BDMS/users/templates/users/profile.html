@@ -4,146 +4,93 @@
 {% block title %}User Profile - BDMS{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="profile-card">
-            <div class="profile-header">
-                <div class="profile-avatar">
-                    <i class="bi bi-person-circle"></i>
-                </div>
-                <h2 class="profile-name">{{ user.first_name|default:user.username }} {{ user.last_name }}</h2>
-                <p class="profile-role">
-                    {% if profile.role %}
-                        {{ profile.get_role_display }}
-                    {% else %}
-                        Regular User
-                    {% endif %}
-                </p>
+<div class="row py-4">
+    <!-- Left Column: Profile Card & Overview -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm text-center p-4" style="border-radius: 12px;">
+            <div class="profile-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.2rem; border-radius: 50%;">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
             </div>
+            <h4 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ user.first_name }} {{ user.last_name }}</h4>
+            <span class="badge mb-3 font-weight-bold" style="background-color: var(--accent-green); width: fit-content; margin: 0 auto;">
+                <i class="bi bi-shield-check"></i> {{ profile.get_role_display|default:"Directorate User" }}
+            </span>
+            <p class="text-muted small mb-4">{{ profile.designation|default:"Designation Not Specified" }}</p>
+            
+            <hr class="my-4">
+            
+            <!-- Statistics Block -->
+            <div class="row text-center">
+                <div class="col-6 border-end">
+                    <h5 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ user.material_set.count|default:0 }}</h5>
+                    <span class="text-muted small text-uppercase font-weight-bold">Materials Uploaded</span>
+                </div>
+                <div class="col-6">
+                    <h5 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ user.inventorytransaction_set.count|default:0 }}</h5>
+                    <span class="text-muted small text-uppercase font-weight-bold">Transactions Recorded</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <form method="post" class="needs-validation">
-                {% csrf_token %}
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h5 class="mb-3"><i class="bi bi-person"></i> Personal Information</h5>
-                        <div class="mb-3">
-                            <label for="first_name" class="form-label">First Name</label>
-                            <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
+    <!-- Right Column: Edit Profile Form -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);"><i class="bi bi-person-gear"></i> Update Profile Details</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+                    
+                    <h6 class="font-weight-bold text-uppercase mb-3" style="color: var(--accent-saffron); border-left: 3px solid var(--accent-saffron); padding-left: 8px;">Personal Information</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_first_name" class="form-label font-weight-bold" style="color: var(--primary-navy);">First Name</label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control" id="id_first_name" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="last_name" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" disabled value="{{ user.email }}">
-                            <small class="text-muted">Email cannot be changed</small>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_last_name" class="form-label font-weight-bold" style="color: var(--primary-navy);">Last Name</label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" class="form-control" id="id_last_name" required>
                         </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <h5 class="mb-3"><i class="bi bi-briefcase"></i> Official Details</h5>
-                        <div class="mb-3">
-                            <label for="designation" class="form-label">Designation</label>
+                    <h6 class="font-weight-bold text-uppercase mt-4 mb-3" style="color: var(--accent-saffron); border-left: 3px solid var(--accent-saffron); padding-left: 8px;">Account & Profile Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_designation" class="form-label font-weight-bold" style="color: var(--primary-navy);">Designation</label>
                             {{ form.designation }}
                         </div>
-                        <div class="mb-3">
-                            <label for="department" class="form-label">Department</label>
-                            {{ form.department }}
+                        <div class="col-md-6 mb-3">
+                            <label for="id_email" class="form-label font-weight-bold" style="color: var(--primary-navy);">Email Address</label>
+                            {{ form.email }}
                         </div>
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Phone Number</label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_phone" class="form-label font-weight-bold" style="color: var(--primary-navy);">Contact Number</label>
                             {{ form.phone }}
                         </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h5 class="mb-3"><i class="bi bi-lock"></i> Account Information</h5>
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" disabled value="{{ user.username }}">
-                            <small class="text-muted">Username cannot be changed</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Account Status</label>
-                            {% if profile.is_active %}
-                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
-                            {% else %}
-                                <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Inactive</span>
-                            {% endif %}
+                        <div class="col-md-6 mb-3">
+                            <label for="id_password" class="form-label font-weight-bold" style="color: var(--primary-navy);">Profile Password</label>
+                            {{ form.password }}
                         </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <h5 class="mb-3"><i class="bi bi-calendar"></i> System Information</h5>
-                        <div class="mb-3">
-                            <label class="form-label">Member Since</label>
-                            <input type="text" class="form-control" disabled value="{{ user.date_joined|date:'d M, Y' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Last Login</label>
-                            <input type="text" class="form-control" disabled value="{{ user.last_login|date:'d M, Y H:i' }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label font-weight-bold" style="color: var(--primary-navy);">System Username</label>
+                            <input type="text" class="form-control bg-light" value="{{ profile.username }}" readonly disabled>
                         </div>
                     </div>
-                </div>
 
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i> Save Changes
-                    </button>
-                    <a href="{% url 'documents:dashboard' %}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
-                    </a>
-                </div>
-            </form>
-
-            <hr class="my-4">
-
-            <div class="row text-center mt-4">
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-file-pdf"></i>
-                        </div>
-                        <div class="stat-label">Documents Uploaded</div>
-                        <div class="stat-number" data-format="number">
-                            {% if user.documents.count %}
-                                {{ user.documents.count }}
-                            {% else %}
-                                0
-                            {% endif %}
-                        </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-gov-primary px-4 py-2">
+                            Save Changes <i class="bi bi-save"></i>
+                        </button>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-clock-history"></i>
-                        </div>
-                        <div class="stat-label">Total Activities</div>
-                        <div class="stat-number" data-format="number">
-                            {% if user.transactions.count %}
-                                {{ user.transactions.count }}
-                            {% else %}
-                                0
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <div class="stat-label">Account Role</div>
-                        <div class="stat-number" style="font-size: 1rem;">
-                            {{ profile.get_role_display|default:'User' }}
-                        </div>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Receipt - BDMS IIMS 1.0{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <h2 class="fw-bold mb-0" style="color: var(--primary-navy);">
+                        <i class="bi bi-cloud-upload"></i> Material Invoice Intake
+                    </h2>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);">Select Vendor Receipt</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" enctype="multipart/form-data" id="uploadForm">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label class="form-label font-weight-bold" style="color: var(--primary-navy);">Vendor Invoice PDF</label>
+                                <!-- Interactive Drag and Drop Upload Area -->
+                                <div class="file-upload-box">
+                                    {{ form.receipt_pdf }}
+                                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    <h4 class="fw-bold mb-2" style="color: var(--primary-navy);">Drag and drop invoice receipt PDF here</h4>
+                                    <p class="text-muted small">or click anywhere to browse local files</p>
+                                    <span class="badge bg-light text-muted border px-3 py-2 mt-2">Maximum file size: 10 MB | Formats: PDF only</span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 mt-4">
+                                <button type="submit" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
+                                    Analyze Invoice <i class="bi bi-cpu"></i>
+                                </button>
+                                <a href="{% url 'documents:dashboard' %}" class="btn btn-gov-secondary px-4 py-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Guidelines Card -->
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; border-left: 4px solid var(--accent-saffron) !important;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold" style="color: var(--accent-saffron);"><i class="bi bi-lightbulb"></i> How It Works</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="mb-0 text-muted small" style="padding-left: 18px; line-height: 1.6;">
+                            <li class="mb-2"><strong>Smart Invoice Reading:</strong> Our system processes the PDF receipt using OCR text extractors to identify key details automatically.</li>
+                            <li class="mb-2"><strong>Verification Screen:</strong> You will be presented with a confirmation dashboard showing the extracted metadata (Name, Quantity, Date, price) before adding it to the live inventory.</li>
+                            <li class="mb-2"><strong>Barcode Generation:</strong> A unique Code128 barcode is automatically generated for the physical material upon receipt approval.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

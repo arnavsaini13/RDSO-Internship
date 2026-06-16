@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - BDMS IIMS 1.0{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar (Replicated from Reference Photo 1) -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Dashboard Workspace -->
+    <main class="dashboard-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1" style="color: var(--primary-navy);">System Status Dashboard</h2>
+                <p class="text-muted mb-0">Welcome, <strong>{{ user.first_name|default:user.username }}</strong>! Track and manage RDSO physical assets.</p>
+            </div>
+            <div>
+                <a href="{% url 'documents:upload_material' %}" class="btn btn-gov-primary">
+                    <i class="bi bi-plus-lg"></i> Intake New Material
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "registered successfully" in message.message or "Welcome to the portal" in message.message or "Profile registered" in message.message %}
+                    <div class="alert border-0 shadow-sm d-flex justify-content-between align-items-center mb-4 p-3" style="border-radius: 12px; background-color: var(--accent-saffron-light); border: 1px solid var(--accent-saffron-border) !important;">
+                        <div class="pe-3">
+                            <h6 class="fw-bold mb-1" style="color: var(--accent-saffron);"><i class="bi bi-shield-check"></i> Account Setup Complete!</h6>
+                            <p class="mb-0 text-muted small">Your profile and password have been successfully configured. Click the button to update your password if desired.</p>
+                        </div>
+                        <a href="{% url 'users:change_password' %}" class="btn btn-sm btn-gov-primary text-nowrap">
+                            Change Password <i class="bi bi-key-fill ms-1"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <!-- Four Statistics Widget Cards (Navy, Green, Saffron, Purple) -->
+        <div class="stat-widget-grid">
+            <div class="stat-widget-card">
+                <div class="stat-widget-icon navy">
+                    <i class="bi bi-boxes"></i>
+                </div>
+                <div class="stat-widget-info">
+                    <span class="stat-widget-label">Total Materials</span>
+                    <span class="stat-widget-num">{{ total_materials }}</span>
+                </div>
+            </div>
+            <div class="stat-widget-card">
+                <div class="stat-widget-icon green">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <div class="stat-widget-info">
+                    <span class="stat-widget-label">Total Valuation</span>
+                    <span class="stat-widget-num">₹{{ total_balance_value|floatformat:2 }}</span>
+                </div>
+            </div>
+            <div class="stat-widget-card">
+                <div class="stat-widget-icon saffron">
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                </div>
+                <div class="stat-widget-info">
+                    <span class="stat-widget-label">Check Outs (Takes)</span>
+                    <span class="stat-widget-num">{{ total_takes }}</span>
+                </div>
+            </div>
+            <div class="stat-widget-card">
+                <div class="stat-widget-icon purple">
+                    <i class="bi bi-arrow-down-left-circle"></i>
+                </div>
+                <div class="stat-widget-info">
+                    <span class="stat-widget-label">Total Returns</span>
+                    <span class="stat-widget-num">{{ total_returns }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Replicated Split Screen Content (From Reference Photo 1) -->
+        <div class="split-dashboard-row">
+            <!-- Left Column: My Materials List -->
+            <section class="split-col-left">
+                <h5 class="fw-bold mb-3" style="color: var(--primary-navy); border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">My Materials</h5>
+                
+                {% for material in recent_materials %}
+                    <div class="material-sidebar-card {% if forloop.first %}active{% endif %}" onclick="window.location.href='{% url 'documents:material_detail' material.id %}'">
+                        <span class="material-code-badge">{{ material.material_id }}</span>
+                        <h4 class="material-sidebar-name text-truncate">{{ material.material_name }}</h4>
+                        <span class="material-sidebar-status"><i class="bi bi-building"></i> {{ material.vendor_name|truncatechars:20 }}</span>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-4 bg-white border rounded">
+                        <p class="text-muted mb-0">No materials loaded yet</p>
+                    </div>
+                {% endfor %}
+            </section>
+
+            <!-- Right Column: Status Tracking, Stepper & Alerts -->
+            <section class="split-col-right">
+                <h5 class="fw-bold mb-3" style="color: var(--primary-navy); border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">Material Status Tracking</h5>
+                
+                {% if recent_materials %}
+                    {% with latest=recent_materials|first %}
+                        <!-- Summary Card Block -->
+                        <div class="tracking-info-grid">
+                            <div class="tracking-info-card">
+                                <span class="tracking-info-label">Current Status</span>
+                                <div class="tracking-info-val text-success">Active Stock</div>
+                            </div>
+                            <div class="tracking-info-card">
+                                <span class="tracking-info-label">Active Balance</span>
+                                <div class="tracking-info-val">{{ latest.balance.available_quantity }} units</div>
+                            </div>
+                            <div class="tracking-info-card">
+                                <span class="tracking-info-label">Reference ID</span>
+                                <div class="tracking-info-val text-muted">{{ latest.material_id }}</div>
+                            </div>
+                        </div>
+
+                        <!-- 6-Stage Stepper Tracker Replicated from Reference Photo 1 -->
+                        <div class="stepper-stages">
+                            <div class="step-stage-card completed">
+                                <span class="step-stage-num">Stage 1</span>
+                                <div class="step-stage-name">Intake</div>
+                            </div>
+                            <div class="step-stage-card completed">
+                                <span class="step-stage-num">Stage 2</span>
+                                <div class="step-stage-name">Barcode</div>
+                            </div>
+                            <div class="step-stage-card completed">
+                                <span class="step-stage-num">Stage 3</span>
+                                <div class="step-stage-name">Scrutiny</div>
+                            </div>
+                            <div class="step-stage-card active-stage">
+                                <span class="step-stage-num">Stage 4</span>
+                                <div class="step-stage-name">Active</div>
+                            </div>
+                            <div class="step-stage-card">
+                                <span class="step-stage-num">Stage 5</span>
+                                <div class="step-stage-name">Audited</div>
+                            </div>
+                            <div class="step-stage-card">
+                                <span class="step-stage-num">Stage 6</span>
+                                <div class="step-stage-name">Closed</div>
+                            </div>
+                        </div>
+
+                        <!-- Notice/Warnings Comment Card -->
+                        <div class="status-comment-box">
+                            <div class="status-comment-title">
+                                <i class="bi bi-info-circle-fill"></i> System Allocation Remarks
+                            </div>
+                            <div class="status-comment-body">
+                                Auto-OCR text extraction verified successfully for HSN code <strong>{{ latest.hsn_code|default:"Not Specified" }}</strong>. Barcode <strong>{{ latest.material_id }}</strong> generated under standard railway guidelines. Storage location recorded as <strong>{{ latest.storage_location|default:"Central Depot" }}</strong>.
+                            </div>
+                        </div>
+
+                        <!-- Collapsible View Details Accordion -->
+                        <div class="collapsible-detail-card mb-4">
+                            <div class="collapsible-title">
+                                <span><i class="bi bi-list-task text-muted me-2"></i> View Recent System Logs</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="collapsible-content" style="display: none;">
+                                <ul class="list-unstyled mb-0">
+                                    {% for txn in recent_transactions|slice:":4" %}
+                                        <li class="pb-2 border-bottom mb-2">
+                                            <span class="badge {% if txn.action == 'TAKE' %}bg-danger{% elif txn.action == 'RETURN' %}bg-success{% else %}bg-primary{% endif %} me-2">{{ txn.action }}</span>
+                                            <strong>{{ txn.quantity }} units</strong> by <em>{{ txn.directorate }}</em> on {{ txn.transaction_date|date:"d M, H:i" }}
+                                        </li>
+                                    {% empty %}
+                                        <li>No logs available</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% else %}
+                    <div class="text-center py-5 bg-white border rounded">
+                        <i class="bi bi-folder-x display-4 text-muted mb-3 d-block"></i>
+                        <p class="text-muted mb-0">No active stock materials to track status.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+</div>
+
+{% if show_password_change_popup %}
+<!-- Password Change Modal -->
+<div class="modal fade" id="passwordChangeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="passwordChangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header text-white" style="background-color: var(--primary-navy);">
+                <h5 class="modal-title fw-bold" id="passwordChangeModalLabel"><i class="bi bi-shield-lock-fill me-2"></i> Update Your Password</h5>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">You have signed in using a temporary password. For security, please choose a new custom password before continuing.</p>
+                
+                <form id="passwordPopupForm" method="post" action="{% url 'users:change_password_popup' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_popup_new_password" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy);">New Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light" style="color: var(--primary-navy);"><i class="bi bi-key-fill"></i></span>
+                            <input type="password" name="new_password" id="id_popup_new_password" class="form-control" required placeholder="Enter new password">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_popup_confirm_password" class="form-label fw-bold small text-uppercase" style="color: var(--primary-navy);">Confirm New Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light" style="color: var(--primary-navy);"><i class="bi bi-check-circle-fill"></i></span>
+                            <input type="password" name="confirm_password" id="id_popup_confirm_password" class="form-control" required placeholder="Confirm new password">
+                        </div>
+                        <div id="modal-password-error" class="text-danger small mt-2 d-none">Passwords do not match.</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-gov-secondary px-3 py-2 fw-bold text-uppercase" style="font-size: 0.85rem;" data-bs-dismiss="modal">Change Later</button>
+                        <button type="submit" class="btn btn-gov-primary px-4 py-2 fw-bold text-uppercase" style="font-size: 0.85rem; background-color: var(--accent-green); border-color: var(--accent-green);">Save & Continue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var myModal = new bootstrap.Modal(document.getElementById('passwordChangeModal'));
+        myModal.show();
+        
+        // Client side validation
+        const form = document.getElementById('passwordPopupForm');
+        const pass1 = document.getElementById('id_popup_new_password');
+        const pass2 = document.getElementById('id_popup_confirm_password');
+        const errorDiv = document.getElementById('modal-password-error');
+        
+        form.addEventListener('submit', function(e) {
+            if (pass1.value !== pass2.value) {
+                e.preventDefault();
+                errorDiv.classList.remove('d-none');
+            } else {
+                errorDiv.classList.add('d-none');
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

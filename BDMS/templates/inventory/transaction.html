@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if action == 'TAKE' %}Check Out Material{% else %}Return Material{% endif %} - {{ material.material_id }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <h2 class="fw-bold mb-0" style="color: var(--primary-navy);">
+                        {% if action == 'TAKE' %}
+                            <i class="bi bi-dash-circle-fill text-danger"></i> Check Out Material (Take)
+                        {% else %}
+                            <i class="bi bi-plus-circle-fill text-success"></i> Return Material (Stock Add)
+                        {% endif %}
+                    </h2>
+                </div>
+
+                <!-- Info Block of Selected Material -->
+                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 12px; background-color: #fafbfc;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small font-weight-bold text-uppercase">Material ID</span>
+                            <strong style="color: var(--primary-navy); font-family: monospace; font-size: 1.1rem;">{{ material.material_id }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small font-weight-bold text-uppercase">Material Name</span>
+                            <strong style="color: var(--primary-navy);">{{ material.material_name }}</strong>
+                        </div>
+                    </div>
+                    <div class="row mt-3 pt-3 border-top">
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small font-weight-bold text-uppercase">Current Balance</span>
+                            <span class="badge bg-success px-2 py-1 font-weight-bold mt-1">{{ material.balance.available_quantity }} units</span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small font-weight-bold text-uppercase">Storage Depot</span>
+                            <span class="badge bg-light text-muted border px-2 py-1 mt-1"><i class="bi bi-geo-alt"></i> {{ material.storage_location|default:"Central Depot" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction form panel -->
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);">Record Stock Operation</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" class="needs-validation">
+                            {% csrf_token %}
+                            
+                            <!-- Hidden input enforcing action selection -->
+                            <input type="hidden" name="action" value="{{ action }}">
+
+                            <div class="mb-3">
+                                <label for="id_quantity" class="form-label font-weight-bold" style="color: var(--primary-navy);">Quantity <span class="text-danger">*</span></label>
+                                {{ form.quantity }}
+                                <div class="form-text">Specify total units to deduct or return (step decimals allowed).</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_directorate" class="form-label font-weight-bold" style="color: var(--primary-navy);">Directorate / Department <span class="text-danger">*</span></label>
+                                {{ form.directorate }}
+                                <div class="form-text">Specify which railway section is executing this operation.</div>
+                            </div>
+
+                            {% if action == 'RETURN' %}
+                                <div class="mb-3">
+                                    <label for="id_return_reason" class="form-label font-weight-bold" style="color: var(--primary-navy);">Return Reason Classification</label>
+                                    {{ form.return_reason }}
+                                    <div class="form-text">If items are returned, specify the physical condition report.</div>
+                                </div>
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <label for="id_remarks" class="form-label font-weight-bold" style="color: var(--primary-navy);">Additional Remarks / Comments</label>
+                                {{ form.remarks }}
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 mt-4">
+                                <button type="submit" class="btn {% if action == 'TAKE' %}btn-gov-danger{% else %}btn-gov-primary{% endif %} px-4 py-2 font-weight-bold">
+                                    Confirm Operation <i class="bi bi-shield-check"></i>
+                                </button>
+                                <a href="{% url 'documents:material_detail' material.id %}" class="btn btn-gov-secondary px-4 py-2">
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

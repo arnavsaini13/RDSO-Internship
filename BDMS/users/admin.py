@@ -4,18 +4,19 @@ from .models import UserProfile
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role', 'department', 'is_active')
-    list_filter = ('role', 'is_active', 'department')
-    search_fields = ('user__username', 'user__email')
+    list_display = ('username', 'email', 'phone', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('username', 'email', 'user__username')
     fieldsets = (
         ('User', {
             'fields': ('user',)
         }),
         ('Profile Information', {
-            'fields': ('role', 'department', 'designation', 'phone')
+            'fields': ('email', 'password', 'designation', 'phone')
         }),
         ('Status', {
             'fields': ('is_active', 'created_at')
         }),
     )
     readonly_fields = ('created_at',)
+

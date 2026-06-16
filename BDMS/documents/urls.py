@@ -25,7 +25,7 @@ urlpatterns = [
     path('scan/', views.scan_barcode, name='scan_barcode'),
     path('material/<str:material_id>/barcode/', views.barcode_view, name='barcode_view'),
     path('material/<str:material_id>/barcode/pdf/', views.barcode_pdf, name='barcode_pdf'),
-    path('material/<str:material_id>/barcode/regenerate/', views.regenerate_barcode_view, name='regenerate_barcode'),
+    path('material/<str:material_id>/barcode/regenerate/', views.regenerate_barcode_view, name='barcode_regenerate'),
     
     # Export
     path('export/inventory/', views.export_inventory, name='export_inventory'),

@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Material Workspace - {{ material.material_id }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="badge border bg-light text-dark font-weight-bold px-2 py-1 mb-2" style="font-family: monospace; font-size: 0.9rem;">{{ material.material_id }}</span>
+                <h2 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ material.material_name }}</h2>
+                <p class="text-muted mb-0">Storage location: <strong>{{ material.storage_location|default:"Central Depot" }}</strong></p>
+            </div>
+            
+            <!-- Quick Take / Return controls -->
+            <div class="d-flex gap-2">
+                <a href="{% url 'documents:take_material' material.material_id %}" class="btn btn-gov-danger px-4 py-2 font-weight-bold">
+                    <i class="bi bi-dash-circle"></i> Take (Deduct Stock)
+                </a>
+                <a href="{% url 'documents:return_material' material.material_id %}" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
+                    <i class="bi bi-plus-circle"></i> Return (Add Stock)
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Barcode Visual Card -->
+            <div class="col-lg-4 mb-4">
+                <div class="card border-0 shadow-sm text-center p-4" style="border-radius: 12px; background: #ffffff;">
+                    <h6 class="font-weight-bold text-uppercase text-muted mb-3">Auto-Generated Barcode</h6>
+                    
+                    <div class="p-3 bg-light border rounded mb-3" style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
+                        {% if material.barcode_image %}
+                            <img src="{{ material.barcode_image.url }}" alt="Material Barcode" class="img-fluid" style="max-height: 80px;">
+                        {% else %}
+                            <div class="text-muted small">
+                                <i class="bi bi-qr-code display-4 mb-2 d-block"></i>
+                                Barcode image not found
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <strong class="d-block mb-4" style="font-family: monospace; font-size: 1.1rem; color: var(--primary-navy);">{{ material.material_id }}</strong>
+
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{% url 'documents:barcode_pdf' material.material_id %}" class="btn btn-gov-secondary w-100">
+                            <i class="bi bi-file-earmark-pdf"></i> Download PDF Label
+                        </a>
+                        {% if user.profile.role == 'ADMIN' or user.is_superuser %}
+                            <a href="{% url 'documents:barcode_regenerate' material.material_id %}" class="btn btn-sm btn-link text-muted mt-2 text-decoration-none">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerate Barcode
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Current Balance widget -->
+                <div class="card border-0 shadow-sm mt-4 p-4" style="border-radius: 12px; background-color: var(--accent-green-light); border: 1px solid var(--accent-green-border) !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-avatar" style="background-color: var(--accent-green);">
+                            <i class="bi bi-database-check" style="font-size: 1.3rem;"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block small font-weight-bold text-uppercase">Current Balance</span>
+                            <h3 class="fw-bold mb-0" style="color: var(--accent-green);">{{ balance.available_quantity }} units</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Details, Stepper & Logs -->
+            <div class="col-lg-8 mb-4">
+                <!-- 6-Stage Stepper Tracker Replicated from Reference Photo 1 -->
+                <h5 class="fw-bold mb-3" style="color: var(--primary-navy); border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">Material Status Tracking</h5>
+                
+                <div class="stepper-stages">
+                    <div class="step-stage-card completed">
+                        <span class="step-stage-num">Stage 1</span>
+                        <div class="step-stage-name">Intake</div>
+                    </div>
+                    <div class="step-stage-card completed">
+                        <span class="step-stage-num">Stage 2</span>
+                        <div class="step-stage-name">Barcode</div>
+                    </div>
+                    <div class="step-stage-card completed">
+                        <span class="step-stage-num">Stage 3</span>
+                        <div class="step-stage-name">Scrutiny</div>
+                    </div>
+                    <div class="step-stage-card {% if balance.available_quantity > 10 %}completed{% else %}active-stage{% endif %}">
+                        <span class="step-stage-num">Stage 4</span>
+                        <div class="step-stage-name">Active</div>
+                    </div>
+                    <div class="step-stage-card {% if balance.available_quantity <= 10 and balance.available_quantity > 0 %}active-stage{% endif %}">
+                        <span class="step-stage-num">Stage 5</span>
+                        <div class="step-stage-name">Low Stock</div>
+                    </div>
+                    <div class="step-stage-card {% if balance.available_quantity == 0 %}active-stage{% endif %}">
+                        <span class="step-stage-num">Stage 6</span>
+                        <div class="step-stage-name">Closed</div>
+                    </div>
+                </div>
+
+                <!-- Material Specifications Card -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);"><i class="bi bi-info-circle"></i> Material Specifications</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Vendor / Supplier</span>
+                                <strong style="color: var(--primary-navy);">{{ material.vendor_name }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Date Received</span>
+                                <strong>{{ material.date_received|date:"d M Y" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Intake Original Volume</span>
+                                <strong>{{ material.quantity }} units</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Unit Pricing / Valuation</span>
+                                <strong>₹{{ material.unit_price|default:0|floatformat:2 }} / Total: ₹{{ material.total_cost|default:0|floatformat:2 }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Batch / Lot Number</span>
+                                <strong>{{ material.batch_number|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">HSN Code</span>
+                                <strong>{{ material.hsn_code|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+
+                        {% if material.description %}
+                            <div class="mt-2 pt-2 border-top">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Description / Notes</span>
+                                <p class="mb-0 text-muted small mt-1">{{ material.description }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Transaction Audit Logs -->
+                <div class="gov-table-card shadow-sm mb-4">
+                    <div class="gov-table-header">
+                        <h5 class="gov-table-title"><i class="bi bi-clock-history"></i> Material Log Trail</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table gov-table">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Quantity</th>
+                                    <th>Directorate</th>
+                                    <th>Date</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for txn in transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if txn.action == 'TAKE' %}bg-danger{% elif txn.action == 'RETURN' %}bg-success{% else %}bg-primary{% endif %} px-2 py-1 font-weight-bold">{{ txn.action }}</span>
+                                    </td>
+                                    <td><strong>{{ txn.quantity }} units</strong></td>
+                                    <td><span class="text-muted small"><i class="bi bi-building"></i> {{ txn.directorate }}</span></td>
+                                    <td><span class="text-muted small">{{ txn.transaction_date|date:"d M Y, H:i" }}</span></td>
+                                    <td><span class="text-muted small">{{ txn.remarks|default:"--" }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No transactions recorded for this material.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

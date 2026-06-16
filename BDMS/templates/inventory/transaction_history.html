@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Activity Logs - BDMS IIMS 1.0{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                    <i class="bi bi-cloud-upload"></i> Upload Material
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                    <i class="bi bi-box-seam"></i> Material Inventory
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
+                    <i class="bi bi-database"></i> Current Balances
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
+                </a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <hr class="dropdown-divider my-2">
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1" style="color: var(--primary-navy);"><i class="bi bi-shield-check"></i> System Audit Logs</h2>
+                <p class="text-muted mb-0">Immutable records of all stock additions, check-outs, returns, and inventory modifications.</p>
+            </div>
+            
+            <!-- Admin Export Buttons -->
+            {% if user.profile.role == 'ADMIN' or user.is_superuser %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'documents:export_transactions' %}" class="btn btn-gov-primary px-3 py-2 font-weight-bold">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Export Activity Logs (CSV)
+                    </a>
+                    <a href="{% url 'documents:export_inventory' %}" class="btn btn-gov-secondary">
+                        Export Balances
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Filter Card Panel -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold" style="color: var(--primary-navy);"><i class="bi bi-funnel"></i> Filter Activity Records</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="action" class="form-label font-weight-bold small text-muted text-uppercase">Action Type</label>
+                        <select name="action" id="action" class="form-select">
+                            <option value="">All Actions</option>
+                            <option value="INITIAL" {% if action == 'INITIAL' %}selected{% endif %}>Initial Stock</option>
+                            <option value="TAKE" {% if action == 'TAKE' %}selected{% endif %}>Material Taken</option>
+                            <option value="RETURN" {% if action == 'RETURN' %}selected{% endif %}>Material Returned</option>
+                            <option value="ADJUSTMENT" {% if action == 'ADJUSTMENT' %}selected{% endif %}>Adjustment</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="directorate" class="form-label font-weight-bold small text-muted text-uppercase">Directorate / Section</label>
+                        <select name="directorate" id="directorate" class="form-select">
+                            <option value="">All Directorates</option>
+                            {% for dir in directorates %}
+                                {% if dir %}
+                                    <option value="{{ dir }}" {% if directorate == dir %}selected{% endif %}>{{ dir }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="days" class="form-label font-weight-bold small text-muted text-uppercase">Date Range</label>
+                        <select name="days" id="days" class="form-select">
+                            <option value="">All Time</option>
+                            <option value="7" {% if days == '7' %}selected{% endif %}>Last 7 Days</option>
+                            <option value="30" {% if days == '30' %}selected{% endif %}>Last 30 Days</option>
+                            <option value="90" {% if days == '90' %}selected{% endif %}>Last 90 Days</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-gov-primary w-100 py-2">
+                            Filter Logs
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Audit Table Card -->
+        <div class="gov-table-card shadow-sm mb-4">
+            <div class="gov-table-header">
+                <h5 class="gov-table-title"><i class="bi bi-clock-history"></i> System Activity Logs</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table gov-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Material ID</th>
+                            <th>Material Name</th>
+                            <th>Quantity</th>
+                            <th>Directorate</th>
+                            <th>Date / Time</th>
+                            <th>Operator</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for txn in page_obj %}
+                        <tr>
+                            <td>
+                                <span class="badge {% if txn.action == 'TAKE' %}bg-danger{% elif txn.action == 'RETURN' %}bg-success{% elif txn.action == 'INITIAL' %}bg-primary{% else %}bg-secondary{% endif %} px-2 py-1 font-weight-bold">{{ txn.action }}</span>
+                            </td>
+                            <td>
+                                <span class="badge border bg-light text-dark font-weight-bold" style="font-family: monospace;">{{ txn.material.material_id }}</span>
+                            </td>
+                            <td><strong style="color: var(--primary-navy);">{{ txn.material.material_name }}</strong></td>
+                            <td><strong>{{ txn.quantity }} units</strong></td>
+                            <td><span class="text-muted small"><i class="bi bi-building"></i> {{ txn.directorate }}</span></td>
+                            <td><span class="text-muted small">{{ txn.transaction_date|date:"d M Y, H:i" }}</span></td>
+                            <td><span class="text-muted small"><i class="bi bi-person"></i> {{ txn.transaction_by.username|default:"System" }}</span></td>
+                            <td><code class="text-muted small" style="font-family: monospace;">{{ txn.ip_address|default:"127.0.0.1" }}</code></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No audit logs match your search.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
+                <ul class="pagination pagination-sm">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if action %}&action={{ action }}{% endif %}{% if directorate %}&directorate={{ directorate }}{% endif %}{% if days %}&days={{ days }}{% endif %}">Previous</a></li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if action %}&action={{ action }}{% endif %}{% if directorate %}&directorate={{ directorate }}{% endif %}{% if days %}&days={{ days }}{% endif %}">{{ num }}</a></li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if action %}&action={{ action }}{% endif %}{% if directorate %}&directorate={{ directorate }}{% endif %}{% if days %}&days={{ days }}{% endif %}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
