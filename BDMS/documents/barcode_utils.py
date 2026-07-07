@@ -27,8 +27,12 @@ def generate_material_barcode(material):
         barcode_image_path: Path to the generated barcode image file
     """
     try:
-        # Use material_id as barcode data
-        barcode_data = material.material_id
+        # Determine the target barcode data format: SR-XXXXXXXX (8-digit zero padded serial number)
+        # e.g., SR-00000004
+        if material.barcode_data and material.barcode_data.startswith('SR-') and len(material.barcode_data) == 11:
+            barcode_data = material.barcode_data
+        else:
+            barcode_data = f"SR-{material.serial_number:08d}"
         
         # Create barcode (use CODE128 format - widely compatible)
         barcode_class = barcode.get_barcode_class('code128')
@@ -52,14 +56,14 @@ def generate_material_barcode(material):
         image_io.seek(0)
         
         # Save to material
-        filename = f"{material.material_id}_barcode.png"
+        filename = f"barcode_{material.serial_number}.png"
         material.barcode_image.save(filename, ContentFile(image_io.read()), save=False)
         material.barcode_data = barcode_data
         
         return material.barcode_image.path if material.barcode_image else None
         
     except Exception as e:
-        print(f"Error generating barcode for {material.material_id}: {str(e)}")
+        print(f"Error generating barcode for SR-{material.serial_number}: {str(e)}")
         return None
 
 
@@ -323,9 +327,17 @@ def get_material_by_barcode(barcode_data):
         # First try exact match on barcode_data field
         material = Material.objects.filter(barcode_data=barcode_data).first()
         
-        # If not found, try material_id (barcode stores material_id)
+        # If not found, try serial_number (barcode stores serial_number)
         if not material:
-            material = Material.objects.filter(material_id=barcode_data).first()
+            try:
+                # Support barcode data both as serial number only or with SR-0000000x format
+                clean_data = barcode_data.strip()
+                if clean_data.upper().startswith('SR-'):
+                    clean_data = clean_data[3:]
+                serial_q = int(clean_data)
+                material = Material.objects.filter(serial_number=serial_q).first()
+            except ValueError:
+                pass
         
         return material
         

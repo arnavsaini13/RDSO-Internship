@@ -80,12 +80,27 @@ class PDFAnalyzer:
             'unit_price': self._extract_unit_price(),
             'total_cost': self._extract_total_cost(),
             'date_received': self._extract_date(),
-            'batch_number': self._extract_batch_number(),
+            'ro_number': self._extract_ro_number(),
+            'vendor_code': self._extract_vendor_code(),
             'hsn_code': self._extract_hsn_code(),
             'description': self._extract_description(),
             'gst': self._extract_gst(),
             'invoice_number': self._extract_invoice_number(),
+            'consignee': self._extract_consignee(),
+            'r_note_no': self._extract_r_note_no(),
+            'po_at_no': self._extract_po_at_no(),
+            'pl_no': self._extract_pl_no(),
         }
+        
+        # Auto-calculate unit_price if missing or 0
+        try:
+            qty = float(self.extracted_data.get('quantity') or 0)
+            total = float(self.extracted_data.get('total_cost') or 0)
+            price = float(self.extracted_data.get('unit_price') or 0)
+            if qty > 0 and total > 0 and (price <= 0 or not self.extracted_data.get('unit_price')):
+                self.extracted_data['unit_price'] = f"{total / qty:.2f}"
+        except Exception:
+            pass
         
         # Remove None values
         self.extracted_data = {k: v for k, v in self.extracted_data.items() if v is not None}
@@ -93,9 +108,27 @@ class PDFAnalyzer:
         return self.extracted_data
     
     def _extract_vendor_name(self) -> str:
-        """Extract vendor/company name"""
+        """Extract vendor/company name (no address)"""
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if line.startswith("M/s ") or "M/s" in line:
+                vendor = line
+                # Look ahead up to 3 lines to grab wrapped name
+                for j in range(1, 4):
+                    if i + j < len(lines):
+                        next_line = lines[i + j]
+                        # Stop if we hit address components
+                        if (any(addr in next_line.lower() for addr in ['sector', 'bawana', 'road', 'plot', 'h-', 'shop', 'near', 'street', 'delhi', 'floor', 'industrial', 'complex', 'block']) or 
+                            re.match(r'^\d+', next_line) or 
+                            ',' in next_line or 
+                            'Vendor Code' in next_line):
+                            break
+                        vendor += " " + next_line
+                return vendor.strip()
+                
+        # Fallback to regex
         patterns = [
-            r'(?:Vendor|Company|From|Supplier|Billed by|Seller)[\s:]*([^\n,]+)',
+            r'(?:Vendor|Company|From|Supplier|Billed by|Seller|Name & Address of Supplier)[\s:]*([^\n,]+)',
             r'[A-Z][A-Za-z\s&.,]+(?:Ltd|Limited|Inc|Corp|Company|Industries|Enterprises)',
         ]
         
@@ -107,8 +140,76 @@ class PDFAnalyzer:
                     return vendor
         return None
     
+    def _extract_material_details(self):
+        """Intelligently parses layout blocks to isolate material details from metadata"""
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        
+        # Find start index
+        start_idx = -1
+        for i, line in enumerate(lines):
+            if "description & drg" in line.lower():
+                start_idx = i
+                break
+                
+        if start_idx == -1:
+            return None, None
+            
+        # Collect lines after start_idx until we hit an end marker
+        collected_lines = []
+        end_markers = [
+            'date of', 'terms of', 'gate/challan', 'consignee', 
+            'rn quantity', 'ro quantity', 'is-no', 'isl-no', 
+            'freight', 'packing', 'forwarding'
+        ]
+        
+        for line in lines[start_idx + 1:]:
+            # Check if this line is an end marker
+            if any(marker in line.lower() for marker in end_markers):
+                break
+            # Skip other metadata lines
+            if any(k in line.lower() for k in ['pl no', 'value:', 'drr-no', 'isl-no', 'date:', 'dated']):
+                continue
+            # Skip code matches like R1260087 or R1260089
+            if re.match(r'^R\d{6,8}$', line):
+                continue
+            collected_lines.append(line)
+            
+        if not collected_lines:
+            return None, None
+            
+        # Split into name and description based on the presence of "(Detailed"
+        name_lines = []
+        desc_lines = []
+        found_detailed = False
+        
+        for line in collected_lines:
+            if found_detailed:
+                desc_lines.append(line)
+            else:
+                # Check for various formats of detailed spec start
+                match = re.search(r'\((?:detailed| detailed|Detailed|Detailed Description)', line)
+                if match:
+                    found_detailed = True
+                    split_idx = match.start()
+                    before = line[:split_idx].strip()
+                    after = line[split_idx:].strip()
+                    if before:
+                        name_lines.append(before)
+                    if after:
+                        desc_lines.append(after)
+                else:
+                    name_lines.append(line)
+                    
+        name = " ".join(name_lines).strip()
+        description = " ".join(desc_lines).strip()
+        return name, description
+
     def _extract_material_name(self) -> str:
         """Extract material/product name"""
+        name, _ = self._extract_material_details()
+        if name:
+            return name
+            
         # Prioritize specific labels and filter out generic keywords like 'Details'
         patterns = [
             r'(?:Material\s+Name|Product\s+Name|Item\s+Name)[\s:]*([^\n]+)',
@@ -157,6 +258,7 @@ class PDFAnalyzer:
     def _extract_total_cost(self) -> str:
         """Extract total cost"""
         patterns = [
+            r'Value\s*:\s*(?:Rs\.)?\s*([\d\.]+)',
             r'(?:Total|Grand Total|Net Amount|Amount Due)[\s:]*Rs\.?\s*(\d+(?:\.\d+)?)',
             r'(?:Total|Amount)[\s:]*(\d+(?:\.\d+)?)',
         ]
@@ -190,17 +292,49 @@ class PDFAnalyzer:
                     pass
         return None
     
-    def _extract_batch_number(self) -> str:
-        """Extract batch number"""
-        # Place longer patterns first so that 'Batch No:' matches full name instead of isolating 'No'
+    def _extract_ro_number(self) -> str:
+        """Extract RO Number from receipt"""
+        # 1. Try same-line match without matching newlines in whitespace!
         patterns = [
-            r'(?:Batch\s+Number|Batch\s+No|Lot\s+No|Batch|Lot)[\s:]*([A-Za-z0-9\-]+)',
+            r'R\.?O\.?\s*(?:No|Number|No\.)\.?[^\S\r\n]*[:\-]?[^\S\r\n]*([A-Za-z0-9\-]+)',
         ]
-        
         for pattern in patterns:
             match = re.search(pattern, self.text, re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                val = match.group(1).strip()
+                if val.lower() != 'r':
+                    return val
+                    
+        # 2. Try signature block/WARD-R.O. match
+        sig_match = re.search(r'WARD-R\.?O\.?\s*([A-Za-z0-9\-]+)', self.text, re.IGNORECASE)
+        if sig_match:
+            return sig_match.group(1).strip()
+                
+        # 3. Search for next-line match
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if re.match(r'^R\.?O\.?\s*(?:No|Number)\.?\s*[:\-]?$', line.strip(), re.IGNORECASE):
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    if next_line and not any(lbl in next_line.lower() for lbl in ['date', 'consignee', 'qty']):
+                        return next_line
+        return None
+
+    def _extract_vendor_code(self) -> str:
+        """Extract Vendor Code from receipt"""
+        # 1. Search for pattern "Vendor Code : <value>" or "Vendor Code <value>"
+        match = re.search(r'Vendor\s+Code\s*[:\-]?\s*([A-Za-z0-9\-]+)', self.text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        
+        # 2. Look for "Vendor Code" line and take next line
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if re.match(r'^vendor\s+code$', line.strip(), re.IGNORECASE):
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    if next_line and not any(lbl in next_line.lower() for lbl in ['depot', 'ward', 'r.o.no', 'date', 'r/note']):
+                        return next_line
         return None
     
     def _extract_hsn_code(self) -> str:
@@ -219,16 +353,46 @@ class PDFAnalyzer:
         return None
     
     def _extract_description(self) -> str:
-        """Extract product description"""
-        # Look for common description patterns
-        lines = self.text.split('\n')
+        """Extract product description / Remarks / Inspection Report from the receipt"""
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        
+        # 1. Search for "Inspection Report"
+        start_idx = -1
         for i, line in enumerate(lines):
-            if any(keyword in line.lower() for keyword in ['description', 'product', 'item details']):
-                if i + 1 < len(lines):
-                    description = lines[i + 1].strip()
-                    if description and len(description) > 5:
-                        return description[:500]  # Limit to 500 chars
-        return None
+            if "inspection report" in line.lower():
+                start_idx = i
+                break
+                
+        # 2. If not found, search for "Remarks"
+        if start_idx == -1:
+            for i, line in enumerate(lines):
+                if line.lower().startswith("remarks:") or line.lower() == "remarks":
+                    start_idx = i
+                    break
+                    
+        if start_idx == -1:
+            # Fallback to the original description extraction
+            _, desc = self._extract_material_details()
+            return desc or ""
+            
+        # Collect lines from start_idx until we hit an end marker
+        collected = []
+        end_markers = [
+            'rr/mtr no', 'challan/invoice', 'due date', 'actual date',
+            'qty.invoiced', 'qty.received', 'qty.accepted', 'depot officer',
+            'despatching', 'receiving official', 'signature not verified',
+            'block copy', 'original po details', 'e-dispatch note'
+        ]
+        
+        first_line = lines[start_idx]
+        collected.append(first_line)
+            
+        for line in lines[start_idx + 1:]:
+            if any(marker in line.lower() for marker in end_markers):
+                break
+            collected.append(line)
+            
+        return "\n".join(collected).strip()
     
     def _extract_gst(self) -> str:
         """Extract GST amount"""
@@ -257,6 +421,67 @@ class PDFAnalyzer:
                 inv_no = match.group(1).strip()
                 if len(inv_no) < 50:
                     return inv_no
+        return None
+
+    def _extract_consignee(self) -> str:
+        """Extract consignee name/depot"""
+        lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if line.lower() == "consignee":
+                consignee_parts = []
+                # Look ahead up to 5 lines to grab wrapped consignee
+                for j in range(1, 6):
+                    if i + j < len(lines):
+                        next_line = lines[i + j]
+                        if any(lbl in next_line.lower() for lbl in ['p.o.qty', 'bal.p.o.qty', 'qty.invoiced', 'qty.received', 'qty.accepted', 'original po']):
+                            break
+                        consignee_parts.append(next_line)
+                return " ".join(consignee_parts).strip()
+        # Fallback
+        patterns = [
+            r'Consignee\s*:\s*([^\n]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, self.text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def _extract_r_note_no(self) -> str:
+        """Extract R/Note No."""
+        patterns = [
+            r'R/Note-No\.\n\s*([\w\d]+)',
+            r'R/Note-No\.\s*([\w\d]+)',
+            r'R/Note\s*No\.?\s*([\w\d]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, self.text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def _extract_po_at_no(self) -> str:
+        """Extract PO/AT No."""
+        patterns = [
+            r'PO/AT\s*No\.\n\s*([\w\d\-]+)',
+            r'PO/AT\s*No\.\s*([\w\d\-]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, self.text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def _extract_pl_no(self) -> str:
+        """Extract PL No."""
+        patterns = [
+            r'PL\s*No\.\s*:\s*([\w\d\-]+)',
+            r'PL\s*No\.\s*([\w\d\-]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, self.text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
         return None
 
 

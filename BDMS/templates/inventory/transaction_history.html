@@ -1,62 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Activity Logs - BDMS IIMS 1.0{% endblock %}
+{% block title %}Activity Logs - SmartTrack IIMS 1.0{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <!-- Left Navigation Sidebar -->
-    <aside class="dashboard-sidebar">
-        <div class="sidebar-profile">
-            <div class="profile-avatar">
-                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
-            </div>
-            <div class="profile-info">
-                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
-                <span class="profile-role">IT Directorate</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard Overview
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
-                    <i class="bi bi-cloud-upload"></i> Upload Material
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
-                    <i class="bi bi-box-seam"></i> Material Inventory
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
-                    <i class="bi bi-database"></i> Current Balances
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
-                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
-                </a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
-                    <i class="bi bi-clock-history"></i> Activity Logs
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <hr class="dropdown-divider my-2">
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </aside>
+    {% include 'inventory/sidebar.html' with active_tab='transactions' %}
 
     <!-- Main Workspace -->
     <main class="dashboard-content">
@@ -138,7 +88,7 @@
                     <thead>
                         <tr>
                             <th>Action</th>
-                            <th>Material ID</th>
+                            <th>Serial No.</th>
                             <th>Material Name</th>
                             <th>Quantity</th>
                             <th>Directorate</th>
@@ -154,7 +104,7 @@
                                 <span class="badge {% if txn.action == 'TAKE' %}bg-danger{% elif txn.action == 'RETURN' %}bg-success{% elif txn.action == 'INITIAL' %}bg-primary{% else %}bg-secondary{% endif %} px-2 py-1 font-weight-bold">{{ txn.action }}</span>
                             </td>
                             <td>
-                                <span class="badge border bg-light text-dark font-weight-bold" style="font-family: monospace;">{{ txn.material.material_id }}</span>
+                                <span class="badge border bg-light text-dark font-weight-bold" style="font-family: monospace;">SR-{{ txn.material.serial_number }}</span>
                             </td>
                             <td><strong style="color: var(--primary-navy);">{{ txn.material.material_name }}</strong></td>
                             <td><strong>{{ txn.quantity }} units</strong></td>

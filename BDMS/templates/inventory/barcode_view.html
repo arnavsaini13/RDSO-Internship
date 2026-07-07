@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Material Barcode - {{ material.material_id }}{% endblock %}
+{% block title %}Material Barcode - SR-{{ material.serial_number }}{% endblock %}
 
 {% block content %}
 <div class="container py-5 text-center">
@@ -13,16 +13,16 @@
             <div class="card border-0 shadow-sm p-4 mb-4 mx-auto" id="printable-barcode-card" style="max-width: 450px; border-radius: 12px; border: 2px solid var(--border-color) !important;">
                 <div class="d-flex align-items-center justify-content-between pb-3 border-bottom mb-3">
                     <strong style="color: var(--primary-navy); letter-spacing: 0.5px;">RDSO IIMS STOCK LABEL</strong>
-                    <span class="badge bg-light text-dark border" style="font-family: monospace;">{{ material.material_id }}</span>
+                    <span class="badge bg-light text-dark border" style="font-family: monospace;">SR-{{ material.serial_number }}</span>
                 </div>
                 
                 <div class="p-4 bg-light border rounded mb-3 d-flex flex-column align-items-center justify-content-center">
                     {% if material.barcode_image %}
-                        <img src="{{ material.barcode_image.url }}" alt="Material Barcode" class="img-fluid mb-2" style="max-height: 80px;">
+                        <img src="{{ material.barcode_image.url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid mb-2" style="max-height: 80px;">
                     {% else %}
                         <i class="bi bi-qr-code display-3 mb-2 text-muted"></i>
                     {% endif %}
-                    <strong style="font-family: monospace; font-size: 1.15rem; color: var(--primary-navy);">{{ material.material_id }}</strong>
+                    <strong style="font-family: monospace; font-size: 1.15rem; color: var(--primary-navy);">{{ material.barcode_data }}</strong>
                 </div>
 
                 <div class="text-start">
@@ -45,7 +45,7 @@
                 <button onclick="window.print()" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
                     <i class="bi bi-printer"></i> Print Stock Label
                 </button>
-                <a href="{% url 'documents:barcode_pdf' material.material_id %}" class="btn btn-gov-secondary px-4 py-2">
+                <a href="{% url 'documents:barcode_pdf' material.serial_number %}" class="btn btn-gov-secondary px-4 py-2">
                     <i class="bi bi-file-earmark-pdf"></i> Download PDF Label
                 </a>
                 <a href="{% url 'documents:material_detail' material.id %}" class="btn btn-gov-secondary px-4 py-2">

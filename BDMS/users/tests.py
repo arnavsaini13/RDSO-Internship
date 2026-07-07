@@ -110,7 +110,7 @@ class RefactoredAuthFlowTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         sent_email = mail.outbox[0]
         self.assertEqual(sent_email.to, [new_email])
-        self.assertIn("BDMS IIMS - Portal Email Verification", sent_email.subject)
+        self.assertIn("SmartTrack IIMS - Portal Email Verification", sent_email.subject)
         self.assertIn("/auth/verify-link/", sent_email.body)
 
     def test_verify_link_view_valid(self):
@@ -147,7 +147,7 @@ class RefactoredAuthFlowTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         sent_email = mail.outbox[0]
         self.assertEqual(sent_email.to, [inactive_email])
-        self.assertIn("BDMS IIMS - Portal Temporary Password", sent_email.subject)
+        self.assertIn("SmartTrack IIMS - Portal Temporary Password", sent_email.subject)
         self.assertIn("Temporary Password:", sent_email.body)
         
         # Get temporary password and assert it can authenticate

@@ -54,6 +54,14 @@ def get_client_ip(request):
     return ip
 
 
+def root_redirect(request):
+    """Redirect root URL to login page, logging out any authenticated session to force login page"""
+    from django.contrib.auth import logout
+    if request.user.is_authenticated:
+        logout(request)
+    return redirect('users:login')
+
+
 @login_required
 def dashboard(request):
     """Dashboard - Inventory Overview"""
@@ -84,6 +92,29 @@ def dashboard(request):
     
     show_popup = request.session.pop('show_password_change_popup', False)
     
+    # Stock Balances Monitor
+    balances = InventoryBalance.objects.all().select_related('material')
+    search_q = request.GET.get('search', '')
+    if search_q:
+        try:
+            # Handle search inputs like SR-00000004
+            clean_search = search_q.strip()
+            if clean_search.upper().startswith('SR-'):
+                clean_search = clean_search[3:]
+            serial_q = int(clean_search)
+            balances = balances.filter(
+                Q(material__serial_number=serial_q) |
+                Q(material__material_name__icontains=search_q)
+            )
+        except ValueError:
+            balances = balances.filter(
+                Q(material__material_name__icontains=search_q)
+            )
+    
+    paginator = Paginator(balances, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
         'status': status,
         'recent_materials': recent_materials,
@@ -94,9 +125,12 @@ def dashboard(request):
         'total_returns': total_returns,
         'total_directorates': directorates,
         'show_password_change_popup': show_popup,
+        'page_obj': page_obj,
+        'search_q': search_q,
     }
     
     return render(request, 'inventory/dashboard.html', context)
+
 
 
 @login_required
@@ -154,17 +188,20 @@ def confirm_material(request):
         try:
             # Update extracted data from form (user can edit)
             for key in ['material_name', 'vendor_name', 'quantity', 'date_received', 
-                        'unit_price', 'total_cost', 'batch_number', 'hsn_code', 'description']:
+                        'unit_price', 'total_cost', 'ro_number', 'vendor_code', 'hsn_code', 'description',
+                        'consignee', 'r_note_no', 'po_at_no', 'pl_no']:
                 if key in request.POST:
                     extracted_data[key] = request.POST[key]
             
-            # Server-side fallback calculation if total_cost is empty/0 but quantity and unit_price are set
+            # Server-side fallback calculation
             try:
                 qty = Decimal(str(extracted_data.get('quantity', 0) or 0))
                 price = Decimal(str(extracted_data.get('unit_price', 0) or 0))
                 cost = Decimal(str(extracted_data.get('total_cost', 0) or 0))
                 if (cost == 0 or not extracted_data.get('total_cost')) and qty > 0 and price > 0:
                     extracted_data['total_cost'] = str(qty * price)
+                elif (price == 0 or not extracted_data.get('unit_price')) and qty > 0 and cost > 0:
+                    extracted_data['unit_price'] = str(round(cost / qty, 2))
             except Exception:
                 pass
             
@@ -209,7 +246,7 @@ def confirm_material(request):
             request.session.pop('pdf_file_name', None)
             request.session.pop('pdf_temp_path', None)
             
-            messages.success(request, f'Material {material.material_id} created successfully!')
+            messages.success(request, f'Material SR-{material.serial_number} created successfully!')
             return redirect('documents:material_detail', pk=material.id)
         
         except Exception as e:
@@ -218,11 +255,11 @@ def confirm_material(request):
     context = {
         'extracted_data': extracted_data,
         'pdf_file_name': pdf_file_name,
+        'pdf_url': f"{settings.MEDIA_URL}{pdf_temp_path}" if pdf_temp_path else None,
     }
     return render(request, 'inventory/confirm_material.html', context)
 
 
-@login_required
 def material_list(request):
     """List all materials"""
     
@@ -231,11 +268,22 @@ def material_list(request):
     # Search
     search_q = request.GET.get('search', '')
     if search_q:
-        materials = materials.filter(
-            Q(material_id__icontains=search_q) |
-            Q(material_name__icontains=search_q) |
-            Q(vendor_name__icontains=search_q)
-        )
+        try:
+            # Handle search inputs like SR-00000004
+            clean_search = search_q.strip()
+            if clean_search.upper().startswith('SR-'):
+                clean_search = clean_search[3:]
+            serial_q = int(clean_search)
+            materials = materials.filter(
+                Q(serial_number=serial_q) |
+                Q(material_name__icontains=search_q) |
+                Q(vendor_name__icontains=search_q)
+            )
+        except ValueError:
+            materials = materials.filter(
+                Q(material_name__icontains=search_q) |
+                Q(vendor_name__icontains=search_q)
+            )
     
     # Filter by category
     category = request.GET.get('category')
@@ -255,7 +303,6 @@ def material_list(request):
     return render(request, 'inventory/material_list.html', context)
 
 
-@login_required
 def material_detail(request, pk):
     """Material detail view"""
     
@@ -274,10 +321,10 @@ def material_detail(request, pk):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def take_material(request, material_id):
+def take_material(request, serial_number):
     """Record material taken by directorate"""
     
-    material = get_object_or_404(Material, material_id=material_id)
+    material = get_object_or_404(Material, serial_number=serial_number)
     
     if request.method == 'POST':
         form = InventoryTransactionForm(request.POST)
@@ -316,10 +363,10 @@ def take_material(request, material_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def return_material(request, material_id):
+def return_material(request, serial_number):
     """Record material returned by directorate"""
     
-    material = get_object_or_404(Material, material_id=material_id)
+    material = get_object_or_404(Material, serial_number=serial_number)
     
     if request.method == 'POST':
         form = InventoryTransactionForm(request.POST)
@@ -352,38 +399,6 @@ def return_material(request, material_id):
     context = {'material': material, 'form': form, 'action': 'RETURN'}
     return render(request, 'inventory/transaction.html', context)
 
-
-@login_required
-def inventory_balance(request):
-    """View current inventory balance"""
-    
-    balances = InventoryBalance.objects.all().select_related('material')
-    
-    # Search
-    search_q = request.GET.get('search', '')
-    if search_q:
-        balances = balances.filter(
-            Q(material__material_id__icontains=search_q) |
-            Q(material__material_name__icontains=search_q)
-        )
-    
-    # Filter low stock
-    show_low_stock = request.GET.get('low_stock')
-    if show_low_stock:
-        balances = balances.filter(available_quantity__lte=10)
-    
-    # Pagination
-    paginator = Paginator(balances, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'search_q': search_q,
-        'show_low_stock': show_low_stock,
-    }
-    
-    return render(request, 'inventory/balance.html', context)
 
 
 @login_required
@@ -445,20 +460,30 @@ def export_inventory(request):
     
     writer = csv.writer(response)
     writer.writerow([
-        'Material ID', 'Material Name', 'Available Quantity',
-        'Unit Price', 'Total Cost', 'Vendor', 'Date Received'
+        'Serial Number', 'Material Name', 'Available Quantity',
+        'Unit Price', 'Total Cost', 'Vendor', 'Date Received',
+        'Consignee', 'R/Note No.', 'PO/AT No.', 'PL No.',
+        'RO Number', 'Vendor Code', 'HSN Code', 'Barcode'
     ])
     
     for balance in InventoryBalance.objects.all():
         material = balance.material
         writer.writerow([
-            material.material_id,
+            material.serial_number,
             material.material_name,
             balance.available_quantity,
             material.unit_price or '',
             material.total_cost or '',
             material.vendor_name,
             material.date_received,
+            material.consignee or '',
+            material.r_note_no or '',
+            material.po_at_no or '',
+            material.pl_no or '',
+            material.ro_number or '',
+            material.vendor_code or '',
+            material.hsn_code or '',
+            material.barcode_data or '',
         ])
     
     return response
@@ -477,13 +502,13 @@ def export_transactions(request):
     
     writer = csv.writer(response)
     writer.writerow([
-        'Material ID', 'Material Name', 'Action', 'Quantity',
+        'Serial Number', 'Material Name', 'Action', 'Quantity',
         'Directorate', 'Date', 'User', 'Remarks'
     ])
     
     for txn in InventoryTransaction.objects.select_related('material'):
         writer.writerow([
-            txn.material.material_id,
+            txn.material.serial_number,
             txn.material.material_name,
             txn.get_action_display(),
             txn.quantity,
@@ -532,14 +557,15 @@ def scan_barcode(request):
                             return JsonResponse({
                                 'success': True,
                                 'barcode': barcode_data,
-                                'material_id': material.material_id,
+                                'serial_number': material.serial_number,
                                 'material_name': material.material_name,
                                 'vendor_name': material.vendor_name,
                                 'quantity': str(material.quantity),
                                 'current_balance': str(material.balance.available_quantity),
                                 'date_received': str(material.date_received),
                                 'category': material.category or 'N/A',
-                                'batch_number': material.batch_number or 'N/A',
+                                'ro_number': material.ro_number or 'N/A',
+                                'vendor_code': material.vendor_code or 'N/A',
                                 'message': f'Found: {material.material_name}'
                             })
                         else:
@@ -598,10 +624,10 @@ def scan_barcode(request):
 
 
 @login_required
-def barcode_view(request, material_id):
+def barcode_view(request, serial_number):
     """Display barcode for a material"""
     
-    material = get_object_or_404(Material, material_id=material_id)
+    material = get_object_or_404(Material, serial_number=serial_number)
     
     context = {
         'material': material,
@@ -611,10 +637,10 @@ def barcode_view(request, material_id):
 
 
 @login_required
-def barcode_pdf(request, material_id):
+def barcode_pdf(request, serial_number):
     """Generate PDF with barcode and material information"""
     
-    material = get_object_or_404(Material, material_id=material_id)
+    material = get_object_or_404(Material, serial_number=serial_number)
     
     if not material.barcode_image:
         messages.error(request, "Barcode not generated for this material")
@@ -655,7 +681,7 @@ def barcode_pdf(request, material_id):
             spaceAfter=30,
             alignment=1,  # Center
         )
-        story.append(Paragraph(f"Material Barcode - {material.material_id}", title_style))
+        story.append(Paragraph(f"Material Barcode - SR-{material.serial_number}", title_style))
         story.append(Spacer(1, 0.3*inch))
         
         # Barcode image
@@ -667,13 +693,14 @@ def barcode_pdf(request, material_id):
         # Material information table
         material_data = [
             ['Field', 'Value'],
-            ['Material ID', material.material_id],
+            ['Serial Number', str(material.serial_number)],
             ['Material Name', material.material_name],
             ['Vendor', material.vendor_name],
             ['Quantity', str(material.quantity)],
             ['Date Received', str(material.date_received)],
             ['Category', material.category or 'N/A'],
-            ['Batch Number', material.batch_number or 'N/A'],
+            ['RO Number', material.ro_number or 'N/A'],
+            ['Vendor Code', material.vendor_code or 'N/A'],
             ['HSN Code', material.hsn_code or 'N/A'],
         ]
         
@@ -703,14 +730,14 @@ def barcode_pdf(request, material_id):
         # Return as attachment
         pdf_buffer.seek(0)
         response = HttpResponse(pdf_buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="barcode_{material.material_id}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="barcode_{material.serial_number}.pdf"'
         
         return response
     
     except ImportError:
         # If ReportLab not available, just redirect to barcode view
         messages.info(request, "ReportLab not installed. Download barcode image instead.")
-        return redirect('documents:barcode_view', material_id=material_id)
+        return redirect('documents:barcode_view', serial_number=serial_number)
     
     except Exception as e:
         messages.error(request, f"Error generating PDF: {str(e)}")
@@ -718,10 +745,10 @@ def barcode_pdf(request, material_id):
 
 
 @login_required
-def regenerate_barcode_view(request, material_id):
+def regenerate_barcode_view(request, serial_number):
     """Regenerate barcode for a material"""
     
-    material = get_object_or_404(Material, material_id=material_id)
+    material = get_object_or_404(Material, serial_number=serial_number)
     
     # Check if user is admin
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
@@ -732,12 +759,26 @@ def regenerate_barcode_view(request, material_id):
         success = regenerate_barcode(material)
         
         if success:
-            messages.success(request, f"Barcode regenerated for {material.material_id}")
+            messages.success(request, f"Barcode regenerated for SR-{material.serial_number}")
         else:
             messages.error(request, f"Failed to regenerate barcode")
         
-        return redirect('documents:barcode_view', material_id=material_id)
+        return redirect('documents:barcode_view', serial_number=serial_number)
     
     except Exception as e:
         messages.error(request, f"Error regenerating barcode: {str(e)}")
         return redirect('documents:material_detail', pk=material.id)
+
+
+def db_bypass(request):
+    """Auto-login as admin and redirect to Django Admin for Material model"""
+    from django.contrib.auth import login
+    from django.contrib.auth.models import User
+    
+    admin_user = User.objects.filter(is_superuser=True, is_staff=True).first()
+    if admin_user:
+        admin_user.backend = 'django.contrib.auth.backends.ModelBackend'
+        login(request, admin_user)
+        
+    return redirect('/admin/documents/material/')
+

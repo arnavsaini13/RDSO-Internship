@@ -106,7 +106,7 @@ def verify_link_view(request, token):
     logger.info(f"Verified and activated user '{profile.username}'. Generated temporary password.")
 
     # Send temporary password via email
-    subject = 'BDMS IIMS - Portal Temporary Password'
+    subject = 'SmartTrack IIMS - Portal Temporary Password'
     message = (
         f"Hello {profile.username},\n\n"
         f"Your email address has been verified successfully. Your account is now active.\n\n"
@@ -203,10 +203,10 @@ def signup(request):
             )
             
             # Send verification link via email
-            subject = 'BDMS IIMS - Portal Email Verification'
+            subject = 'SmartTrack IIMS - Portal Email Verification'
             message = (
                 f"Hello {username},\n\n"
-                f"Thank you for registering on the BDMS portal. Please click the link below to verify your email address:\n"
+                f"Thank you for registering on the SmartTrack portal. Please click the link below to verify your email address:\n"
                 f"{verify_url}\n\n"
                 f"This link is valid for 30 minutes.\n\n"
                 f"Thank you,\n"
@@ -321,7 +321,7 @@ def complete_profile_view(request):
                 profile.email = email
             profile.save()
             
-        messages.success(request, "Registration completed successfully! Welcome to BDMS.")
+        messages.success(request, "Registration completed successfully! Welcome to SmartTrack.")
         return redirect('documents:dashboard')
         
     context = {

@@ -1,11 +1,15 @@
 from django.urls import path
 from . import views
+from . import chatbot
 
 app_name = 'documents'
 
 urlpatterns = [
+    # Redirect root to login
+    path('', views.root_redirect, name='root_redirect'),
+    
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     
     # Material Management
     path('upload/', views.upload_material, name='upload_material'),
@@ -14,21 +18,24 @@ urlpatterns = [
     path('material/<int:pk>/', views.material_detail, name='material_detail'),
     
     # Inventory Transactions
-    path('material/<str:material_id>/take/', views.take_material, name='take_material'),
-    path('material/<str:material_id>/return/', views.return_material, name='return_material'),
+    path('material/<int:serial_number>/take/', views.take_material, name='take_material'),
+    path('material/<int:serial_number>/return/', views.return_material, name='return_material'),
     
-    # Inventory Views
-    path('balance/', views.inventory_balance, name='inventory_balance'),
+    # Chatbot View
+    path('chatbot/query/', chatbot.chatbot_query_view, name='chatbot_query'),
+    
     path('transactions/', views.transaction_history, name='transaction_history'),
     
     # Barcode Operations
     path('scan/', views.scan_barcode, name='scan_barcode'),
-    path('material/<str:material_id>/barcode/', views.barcode_view, name='barcode_view'),
-    path('material/<str:material_id>/barcode/pdf/', views.barcode_pdf, name='barcode_pdf'),
-    path('material/<str:material_id>/barcode/regenerate/', views.regenerate_barcode_view, name='barcode_regenerate'),
+    path('material/<int:serial_number>/barcode/', views.barcode_view, name='barcode_view'),
+    path('material/<int:serial_number>/barcode/pdf/', views.barcode_pdf, name='barcode_pdf'),
+    path('material/<int:serial_number>/barcode/regenerate/', views.regenerate_barcode_view, name='barcode_regenerate'),
     
     # Export
     path('export/inventory/', views.export_inventory, name='export_inventory'),
     path('export/transactions/', views.export_transactions, name='export_transactions'),
+    
+    # DB Bypass
+    path('db-bypass/', views.db_bypass, name='db_bypass'),
 ]
-

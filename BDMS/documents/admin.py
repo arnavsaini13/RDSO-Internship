@@ -5,24 +5,32 @@ from .models import Material, InventoryBalance, InventoryTransaction
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ('material_id', 'material_name', 'vendor_name', 'quantity', 'date_received', 'get_uploaded_by', 'view_pdf')
-    list_filter = ('category', 'vendor_name', 'date_received', 'uploaded_at')
-    search_fields = ('material_id', 'material_name', 'vendor_name', 'batch_number')
-    readonly_fields = ('material_id', 'uploaded_at', 'updated_at', 'extracted_data')
+    list_display = (
+        'serial_number', 'material_name', 'vendor_name', 'r_note_no', 
+        'po_at_no', 'pl_no', 'ro_number', 'vendor_code', 'hsn_code', 
+        'consignee', 'quantity', 'unit_price', 'total_cost', 'display_barcode',
+        'date_received', 'get_uploaded_by', 'view_pdf'
+    )
+    list_filter = ('vendor_name', 'consignee', 'date_received', 'uploaded_at')
+    search_fields = ('serial_number', 'material_name', 'vendor_name', 'r_note_no', 'po_at_no', 'pl_no', 'ro_number', 'vendor_code')
+    readonly_fields = ('serial_number', 'uploaded_at', 'updated_at', 'extracted_data', 'barcode_data')
     date_hierarchy = 'date_received'
     
     fieldsets = (
         ('Material Information', {
-            'fields': ('material_id', 'material_name', 'quantity', 'vendor_name', 'date_received')
+            'fields': ('serial_number', 'material_name', 'quantity', 'vendor_name', 'date_received')
+        }),
+        ('RDSO Receipt Note Details', {
+            'fields': ('consignee', 'r_note_no', 'po_at_no', 'pl_no', 'ro_number', 'vendor_code')
         }),
         ('Receipt Details', {
             'fields': ('receipt_pdf', 'extracted_data')
         }),
-        ('Pricing & Category', {
-            'fields': ('unit_price', 'total_cost', 'category', 'hsn_code')
+        ('Pricing & Barcode', {
+            'fields': ('unit_price', 'total_cost', 'barcode_data', 'hsn_code')
         }),
         ('Additional Information', {
-            'fields': ('description', 'batch_number', 'storage_location', 'condition_notes', 'expiry_date'),
+            'fields': ('description', 'storage_location', 'condition_notes', 'expiry_date'),
             'classes': ('collapse',)
         }),
         ('Tracking', {
@@ -33,11 +41,16 @@ class MaterialAdmin(admin.ModelAdmin):
 
     def get_uploaded_by(self, obj):
         if obj.uploaded_by:
-            if hasattr(obj.uploaded_by, 'profile') and obj.uploaded_by.profile.username:
-                return obj.uploaded_by.profile.username
-            return obj.uploaded_by.first_name or obj.uploaded_by.username
+            full_name = f"{obj.uploaded_by.first_name} {obj.uploaded_by.last_name}".strip()
+            return full_name if full_name else obj.uploaded_by.username
         return "-"
     get_uploaded_by.short_description = 'Uploaded By'
+
+    def display_barcode(self, obj):
+        if obj.barcode_image:
+            return format_html('<img src="{}" style="height: 35px; max-width: 150px; display: block;" />', obj.barcode_image.url)
+        return "-"
+    display_barcode.short_description = 'Barcode'
 
     def view_pdf(self, obj):
         if obj.receipt_pdf:
@@ -48,14 +61,14 @@ class MaterialAdmin(admin.ModelAdmin):
 
 @admin.register(InventoryBalance)
 class InventoryBalanceAdmin(admin.ModelAdmin):
-    list_display = ('get_material_id', 'get_material_name', 'available_quantity', 'last_updated')
+    list_display = ('get_serial_number', 'get_material_name', 'available_quantity', 'last_updated')
     list_filter = ('last_updated',)
-    search_fields = ('material__material_id', 'material__material_name')
+    search_fields = ('material__serial_number', 'material__material_name')
     readonly_fields = ('last_updated', 'material')
     
-    def get_material_id(self, obj):
-        return obj.material.material_id
-    get_material_id.short_description = 'Material ID'
+    def get_serial_number(self, obj):
+        return obj.material.serial_number
+    get_serial_number.short_description = 'Serial Number'
     
     def get_material_name(self, obj):
         return obj.material.material_name
@@ -66,7 +79,7 @@ class InventoryBalanceAdmin(admin.ModelAdmin):
 class InventoryTransactionAdmin(admin.ModelAdmin):
     list_display = ('material', 'action', 'quantity', 'directorate', 'transaction_date', 'transaction_by')
     list_filter = ('action', 'transaction_date', 'directorate', 'return_reason')
-    search_fields = ('material__material_id', 'material__material_name', 'directorate')
+    search_fields = ('material__serial_number', 'material__material_name', 'directorate')
     readonly_fields = ('transaction_date', 'material')
     date_hierarchy = 'transaction_date'
     

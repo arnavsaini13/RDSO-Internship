@@ -11,28 +11,22 @@ from .barcode_utils import generate_material_barcode
 logger = logging.getLogger(__name__)
 
 
-def generate_unique_material_id() -> str:
-    """Generate unique material ID: MAT-2026-XXXX"""
+def generate_unique_serial_number() -> int:
+    """Generate unique sequential serial number"""
     try:
-        last_material = Material.objects.all().order_by('-id').first()
-        if last_material:
-            # Extract number from last ID
-            last_id_str = last_material.material_id.split('-')[-1]
-            last_num = int(last_id_str)
-            next_num = last_num + 1
-        else:
-            next_num = 1
-        
-        return f"MAT-2026-{str(next_num).zfill(4)}"
+        last_material = Material.objects.all().order_by('-serial_number').first()
+        if last_material and last_material.serial_number:
+            return last_material.serial_number + 1
+        return 1
     except Exception as e:
-        logger.error(f"Error generating material ID: {e}")
-        return f"MAT-2026-{Material.objects.count() + 1}"
+        logger.error(f"Error generating serial number: {e}")
+        return Material.objects.count() + 1
 
 
 def create_material_from_pdf_data(pdf_data: Dict[str, Any], receipt_pdf, uploaded_by) -> Material:
     """Create Material record from extracted PDF data"""
     
-    material_id = generate_unique_material_id()
+    serial_number = generate_unique_serial_number()
     
     # Extract core fields
     material_name = pdf_data.get('material_name', 'Unknown Material')
@@ -40,9 +34,13 @@ def create_material_from_pdf_data(pdf_data: Dict[str, Any], receipt_pdf, uploade
     vendor_name = pdf_data.get('vendor_name', 'Unknown Vendor')
     date_received = pdf_data.get('date_received')
     
+    # Exclude description from dataset/JSON and database field
+    pdf_data_copy = pdf_data.copy()
+    pdf_data_copy.pop('description', None)
+    
     # Create material
     material = Material.objects.create(
-        material_id=material_id,
+        serial_number=serial_number,
         material_name=material_name,
         quantity=quantity,
         receipt_pdf=receipt_pdf,
@@ -50,23 +48,28 @@ def create_material_from_pdf_data(pdf_data: Dict[str, Any], receipt_pdf, uploade
         date_received=date_received,
         unit_price=Decimal(str(pdf_data.get('unit_price', 0))) if pdf_data.get('unit_price') else None,
         total_cost=Decimal(str(pdf_data.get('total_cost', 0))) if pdf_data.get('total_cost') else None,
-        description=pdf_data.get('description'),
+        description=None,  # Do not store description in database
         category=pdf_data.get('category'),
-        batch_number=pdf_data.get('batch_number'),
+        ro_number=pdf_data.get('ro_number'),
+        vendor_code=pdf_data.get('vendor_code'),
         hsn_code=pdf_data.get('hsn_code'),
+        consignee=pdf_data.get('consignee'),
+        r_note_no=pdf_data.get('r_note_no'),
+        po_at_no=pdf_data.get('po_at_no'),
+        pl_no=pdf_data.get('pl_no'),
         uploaded_by=uploaded_by,
-        extracted_data=pdf_data,  # Store all extracted data as JSON
+        extracted_data=pdf_data_copy,  # Store extracted data without description
     )
     
     # Generate barcode for the material
     try:
         generate_material_barcode(material)
         material.save()
-        logger.info(f"Barcode generated for material: {material_id}")
+        logger.info(f"Barcode generated for material: SR-{serial_number}")
     except Exception as e:
-        logger.warning(f"Failed to generate barcode for {material_id}: {e}")
+        logger.warning(f"Failed to generate barcode for SR-{serial_number}: {e}")
     
-    logger.info(f"Material created: {material_id} - {material_name}")
+    logger.info(f"Material created: SR-{serial_number} - {material_name}")
     
     return material
 
@@ -83,7 +86,7 @@ def create_initial_inventory_balance(material: Material, quantity: Decimal = Non
     )
     
     if created:
-        logger.info(f"Inventory balance created for {material.material_id}: {quantity} units")
+        logger.info(f"Inventory balance created for SR-{material.serial_number}: {quantity} units")
     
     return balance
 
@@ -111,7 +114,7 @@ def log_inventory_transaction(
         ip_address=ip_address,
     )
     
-    logger.info(f"Transaction logged: {action} - {material.material_id} - {quantity} units by {directorate}")
+    logger.info(f"Transaction logged: {action} - SR-{material.serial_number} - {quantity} units by {directorate}")
     
     return transaction
 
@@ -137,7 +140,7 @@ def update_inventory_balance(
                 balance.available_quantity -= quantity
                 balance.save()
             else:
-                logger.error(f"Insufficient inventory: {material.material_id}")
+                logger.error(f"Insufficient inventory: SR-{material.serial_number}")
                 return False
         
         elif action == 'RETURN':
@@ -162,7 +165,7 @@ def update_inventory_balance(
             ip_address=ip_address,
         )
         
-        logger.info(f"Inventory updated: {material.material_id} - New balance: {balance.available_quantity}")
+        logger.info(f"Inventory updated: SR-{material.serial_number} - New balance: {balance.available_quantity}")
         return True
     
     except Exception as e:
@@ -186,7 +189,7 @@ def get_inventory_status() -> Dict[str, Any]:
         balance = material.balance
         if balance and balance.available_quantity <= 10:
             low_stock.append({
-                'material_id': material.material_id,
+                'serial_number': material.serial_number,
                 'material_name': material.material_name,
                 'available': str(balance.available_quantity),
             })
@@ -199,11 +202,11 @@ def get_inventory_status() -> Dict[str, Any]:
     }
 
 
-def get_material_transaction_history(material_id: str) -> list:
+def get_material_transaction_history(serial_number: int) -> list:
     """Get all transactions for a specific material"""
     
     try:
-        material = Material.objects.get(material_id=material_id)
+        material = Material.objects.get(serial_number=serial_number)
         transactions = material.transactions.all()
         
         history = []
@@ -221,7 +224,7 @@ def get_material_transaction_history(material_id: str) -> list:
         return history
     
     except Material.DoesNotExist:
-        logger.error(f"Material not found: {material_id}")
+        logger.error(f"Material not found: SR-{serial_number}")
         return []
 
 
@@ -239,7 +242,7 @@ def get_directorate_inventory(directorate: str) -> Dict[str, Any]:
     for txn in transactions:
         total_items_taken += txn.quantity
         items_detail.append({
-            'material_id': txn.material.material_id,
+            'serial_number': txn.material.serial_number,
             'material_name': txn.material.material_name,
             'quantity_taken': str(txn.quantity),
             'date': txn.transaction_date.strftime('%Y-%m-%d'),

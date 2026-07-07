@@ -1,62 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Confirm Material Data - BDMS IIMS 1.0{% endblock %}
+{% block title %}Confirm Material Data - SmartTrack IIMS 1.0{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <!-- Left Navigation Sidebar -->
-    <aside class="dashboard-sidebar">
-        <div class="sidebar-profile">
-            <div class="profile-avatar">
-                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
-            </div>
-            <div class="profile-info">
-                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
-                <span class="profile-role">IT Directorate</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard Overview
-                </a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
-                    <i class="bi bi-cloud-upload"></i> Upload Material
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
-                    <i class="bi bi-box-seam"></i> Material Inventory
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
-                    <i class="bi bi-database"></i> Current Balances
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
-                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
-                    <i class="bi bi-clock-history"></i> Activity Logs
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <hr class="dropdown-divider my-2">
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </aside>
+    {% include 'inventory/sidebar.html' with active_tab='upload' %}
 
     <!-- Main Workspace -->
     <main class="dashboard-content">
@@ -70,45 +20,41 @@
                 </div>
 
                 <div class="row">
-                    <!-- Left Summary extraction stats -->
-                    <div class="col-lg-4 mb-4">
-                        <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 12px; background: linear-gradient(to bottom, #ffffff, #fafbfc);">
-                            <div class="mx-auto bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                <i class="bi bi-robot text-success" style="font-size: 2.2rem;"></i>
+                    <!-- Left Column: PDF Document Viewer -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm d-flex flex-column" style="border-radius: 12px; height: 800px;">
+                            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                                <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Receipt Document Preview
+                                </h5>
+                                {% if pdf_url %}
+                                <a href="{{ pdf_url }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-fullscreen"></i> Fullscreen
+                                </a>
+                                {% endif %}
                             </div>
-                            <h4 class="fw-bold" style="color: var(--primary-navy);">Extraction Complete!</h4>
-                            <p class="text-muted small">Our intelligent OCR has successfully read the invoice structure and populated the inventory fields. Please verify accuracy before creating the active stock record.</p>
-                            
-                            <hr class="my-4">
-                            
-                            <!-- Green success highlights of read status -->
-                            <div class="d-flex flex-column gap-3 text-start">
-                                <div class="p-3 bg-success-subtle border border-success-subtle rounded-3 d-flex align-items-center gap-3" style="background-color: var(--accent-green-light); border-color: var(--accent-green-border) !important;">
-                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 1.25rem;"></i>
-                                    <div>
-                                        <span class="text-muted d-block small font-weight-bold">OCR Confidence</span>
-                                        <strong style="color: var(--accent-green);">98.4% Accuracy</strong>
-                                    </div>
+                            <div class="card-body p-0 flex-grow-1" style="background-color: #f8f9fa;">
+                                {% if pdf_url %}
+                                <embed src="{{ pdf_url }}#toolbar=1&navpanes=0&statusbar=0" type="application/pdf" width="100%" height="100%" style="border: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;" />
+                                {% else %}
+                                <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted p-4">
+                                    <i class="bi bi-file-earmark-x" style="font-size: 3rem;"></i>
+                                    <p class="mt-2 mb-0">No receipt PDF preview available</p>
                                 </div>
-                                
-                                <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3">
-                                    <i class="bi bi-filetype-pdf text-danger" style="font-size: 1.25rem;"></i>
-                                    <div>
-                                        <span class="text-muted d-block small font-weight-bold">Analyzed File</span>
-                                        <strong class="text-truncate d-inline-block" style="max-width: 180px;">{{ pdf_file_name }}</strong>
-                                    </div>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right full editable fields card -->
-                    <div class="col-lg-8 mb-4">
-                        <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <!-- Right Column: Verification Form -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm d-flex flex-column" style="border-radius: 12px; height: 800px;">
                             <div class="card-header bg-white py-3 border-bottom">
-                                <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);"><i class="bi bi-pencil-square"></i> Confirm Form Specifications</h5>
+                                <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);">
+                                    <i class="bi bi-pencil-square me-1"></i> Confirm Form Specifications
+                                </h5>
                             </div>
-                            <div class="card-body p-4">
+                            <div class="card-body p-4 flex-grow-1" style="overflow-y: auto;">
                                 <form method="post" enctype="multipart/form-data">
                                     {% csrf_token %}
                                     
@@ -158,16 +104,46 @@
                                         </div>
                                     </div>
 
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="batch_number" class="form-label font-weight-bold" style="color: var(--primary-navy);">Batch / Lot Number</label>
-                                            <input type="text" name="batch_number" value="{{ extracted_data.batch_number|default:'' }}" class="form-control" id="batch_number">
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="hsn_code" class="form-label font-weight-bold" style="color: var(--primary-navy);">HSN Code</label>
-                                            <input type="text" name="hsn_code" value="{{ extracted_data.hsn_code|default:'' }}" class="form-control" id="hsn_code">
-                                        </div>
-                                    </div>
+                                     <div class="row">
+                                         <div class="col-md-6 mb-3">
+                                             <label for="hsn_code" class="form-label font-weight-bold" style="color: var(--primary-navy);">HSN Code</label>
+                                             <input type="text" name="hsn_code" value="{{ extracted_data.hsn_code|default:'' }}" class="form-control" id="hsn_code">
+                                         </div>
+                                     </div>
+
+                                     <h6 class="font-weight-bold text-uppercase mt-4 mb-3" style="color: var(--accent-saffron); border-left: 3px solid var(--accent-saffron); padding-left: 8px;">RDSO Receipt Specifications</h6>
+                                     <div class="row">
+                                         <div class="col-md-6 mb-3">
+                                             <label for="consignee" class="form-label font-weight-bold" style="color: var(--primary-navy);">Consignee</label>
+                                             <input type="text" name="consignee" value="{{ extracted_data.consignee|default:'' }}" class="form-control" id="consignee" placeholder="e.g. Central Stores Depot, RDSO">
+                                         </div>
+                                         <div class="col-md-6 mb-3">
+                                             <label for="r_note_no" class="form-label font-weight-bold" style="color: var(--primary-navy);">R/Note No.</label>
+                                             <input type="text" name="r_note_no" value="{{ extracted_data.r_note_no|default:'' }}" class="form-control" id="r_note_no">
+                                         </div>
+                                     </div>
+
+                                     <div class="row">
+                                         <div class="col-md-6 mb-3">
+                                             <label for="po_at_no" class="form-label font-weight-bold" style="color: var(--primary-navy);">PO/AT No.</label>
+                                             <input type="text" name="po_at_no" value="{{ extracted_data.po_at_no|default:'' }}" class="form-control" id="po_at_no">
+                                         </div>
+                                         <div class="col-md-6 mb-3">
+                                             <label for="pl_no" class="form-label font-weight-bold" style="color: var(--primary-navy);">PL No.</label>
+                                             <input type="text" name="pl_no" value="{{ extracted_data.pl_no|default:'' }}" class="form-control" id="pl_no">
+                                         </div>
+                                     </div>
+
+                                     <div class="row">
+                                         <div class="col-md-6 mb-3">
+                                             <label for="ro_number" class="form-label font-weight-bold" style="color: var(--primary-navy);">RO Number</label>
+                                             <input type="text" name="ro_number" value="{{ extracted_data.ro_number|default:'' }}" class="form-control" id="ro_number">
+                                         </div>
+                                         <div class="col-md-6 mb-3">
+                                             <label for="vendor_code" class="form-label font-weight-bold" style="color: var(--primary-navy);">Vendor Code</label>
+                                             <input type="text" name="vendor_code" value="{{ extracted_data.vendor_code|default:'' }}" class="form-control" id="vendor_code">
+                                         </div>
+                                     </div>
 
                                     <div class="mb-3">
                                         <label for="description" class="form-label font-weight-bold" style="color: var(--primary-navy);">Material Description / Notes</label>
@@ -198,22 +174,36 @@
                 function calculateTotal() {
                     const qty = parseFloat(qtyInput.value) || 0;
                     const unitPrice = parseFloat(unitPriceInput.value) || 0;
-                    const total = qty * unitPrice;
-                    totalCostInput.value = total.toFixed(2);
+                    if (qty > 0 && unitPrice > 0) {
+                        totalCostInput.value = (qty * unitPrice).toFixed(2);
+                    }
+                }
+
+                function calculateUnitPrice() {
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    const totalCost = parseFloat(totalCostInput.value) || 0;
+                    if (qty > 0 && totalCost > 0) {
+                        unitPriceInput.value = (totalCost / qty).toFixed(2);
+                    }
                 }
 
                 if (qtyInput && unitPriceInput && totalCostInput) {
                     qtyInput.addEventListener('input', calculateTotal);
                     unitPriceInput.addEventListener('input', calculateTotal);
+                    totalCostInput.addEventListener('input', calculateUnitPrice);
                     qtyInput.addEventListener('change', calculateTotal);
                     unitPriceInput.addEventListener('change', calculateTotal);
+                    totalCostInput.addEventListener('change', calculateUnitPrice);
 
                     // Auto-calculate on load if total_cost is 0 or empty but qty and unit_price are populated
                     const initialTotal = parseFloat(totalCostInput.value) || 0;
                     const initialQty = parseFloat(qtyInput.value) || 0;
                     const initialPrice = parseFloat(unitPriceInput.value) || 0;
+                    
                     if (initialTotal === 0 && initialQty > 0 && initialPrice > 0) {
                         calculateTotal();
+                    } else if (initialPrice === 0 && initialQty > 0 && initialTotal > 0) {
+                        calculateUnitPrice();
                     }
                 }
             });

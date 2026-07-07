@@ -1,62 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Material Inventory - BDMS IIMS 1.0{% endblock %}
+{% block title %}Material Inventory - SmartTrack IIMS 1.0{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <!-- Left Navigation Sidebar -->
-    <aside class="dashboard-sidebar">
-        <div class="sidebar-profile">
-            <div class="profile-avatar">
-                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
-            </div>
-            <div class="profile-info">
-                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
-                <span class="profile-role">IT Directorate</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard Overview
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
-                    <i class="bi bi-cloud-upload"></i> Upload Material
-                </a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
-                    <i class="bi bi-box-seam"></i> Material Inventory
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
-                    <i class="bi bi-database"></i> Current Balances
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
-                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
-                    <i class="bi bi-clock-history"></i> Activity Logs
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <hr class="dropdown-divider my-2">
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </aside>
+    {% include 'inventory/sidebar.html' with active_tab='materials' %}
 
     <!-- Main Workspace -->
     <main class="dashboard-content">
@@ -65,11 +15,13 @@
                 <h2 class="fw-bold mb-1" style="color: var(--primary-navy);"><i class="bi bi-box-seam"></i> Registered Material Records</h2>
                 <p class="text-muted mb-0">Total of <strong>{{ page_obj.paginator.count }}</strong> physical materials entered in database.</p>
             </div>
+            {% if user.is_authenticated %}
             <div>
                 <a href="{% url 'documents:upload_material' %}" class="btn btn-gov-primary">
                     <i class="bi bi-plus-lg"></i> Intake Material
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <!-- Search and Filter Module -->
@@ -100,9 +52,10 @@
                 <table class="table gov-table">
                     <thead>
                         <tr>
-                            <th>Material ID</th>
+                            <th>Serial No.</th>
                             <th>Material Name</th>
                             <th>Vendor Invoice</th>
+                            <th>Receipt PDF</th>
                             <th>Intake Qty</th>
                             <th>Storage Depot</th>
                             <th>Date Received</th>
@@ -113,13 +66,22 @@
                         {% for mat in page_obj %}
                         <tr>
                             <td>
-                                <span class="badge border bg-light text-dark font-weight-bold px-2 py-2" style="font-family: monospace; font-size: 0.85rem;">{{ mat.material_id }}</span>
+                                <span class="badge border bg-light text-dark font-weight-bold px-2 py-2" style="font-family: monospace; font-size: 0.85rem;">{{ mat.serial_number }}</span>
                             </td>
                             <td>
                                 <strong style="color: var(--primary-navy);">{{ mat.material_name }}</strong>
                             </td>
                             <td>
                                 <span class="text-muted small"><i class="bi bi-building"></i> {{ mat.vendor_name }}</span>
+                            </td>
+                            <td>
+                                {% if mat.receipt_pdf %}
+                                <a href="{{ mat.receipt_pdf.url }}" target="_blank" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-2 text-decoration-none d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i> Open PDF
+                                </a>
+                                {% else %}
+                                <span class="text-muted small"><i class="bi bi-file-earmark-x"></i> N/A</span>
+                                {% endif %}
                             </td>
                             <td>
                                 <strong>{{ mat.quantity }} units</strong>
@@ -135,9 +97,11 @@
                                     <a href="{% url 'documents:material_detail' mat.id %}" class="btn btn-sm btn-outline-primary" title="Open Workspace">
                                         <i class="bi bi-eye"></i> View
                                     </a>
-                                    <a href="{% url 'documents:barcode_view' mat.material_id %}" class="btn btn-sm btn-outline-dark" title="Print Barcode">
+                                    {% if user.is_authenticated %}
+                                    <a href="{% url 'documents:barcode_view' mat.serial_number %}" class="btn btn-sm btn-outline-dark" title="Print Barcode">
                                         <i class="bi bi-printer"></i> Print
                                     </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

@@ -1,0 +1,73 @@
+<aside class="dashboard-sidebar">
+    <div class="sidebar-profile">
+        {% if user.is_authenticated %}
+            <div class="profile-avatar">
+                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
+                <span class="profile-role">IT Directorate</span>
+            </div>
+        {% else %}
+            <div class="profile-avatar bg-secondary text-white">
+                G
+            </div>
+            <div class="profile-info">
+                <span class="profile-name">Guest User</span>
+                <span class="profile-role">Public Visitor</span>
+            </div>
+        {% endif %}
+    </div>
+    <ul class="sidebar-menu">
+        {% if user.is_authenticated %}
+        <li class="sidebar-item {% if active_tab == 'dashboard' %}active{% endif %}">
+            <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
+                <i class="bi bi-speedometer2"></i> Dashboard Overview
+            </a>
+        </li>
+        <li class="sidebar-item {% if active_tab == 'upload' %}active{% endif %}">
+            <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
+                <i class="bi bi-cloud-upload"></i> Upload Material
+            </a>
+        </li>
+        {% endif %}
+        <li class="sidebar-item {% if active_tab == 'materials' %}active{% endif %}">
+            <a href="{% url 'documents:material_list' %}" class="sidebar-link">
+                <i class="bi bi-box-seam"></i> Material Inventory
+            </a>
+        </li>
+        <!-- Django Database Link shown unconditionally in sidebar -->
+        <li class="sidebar-item">
+            <a href="{% url 'documents:db_bypass' %}" class="sidebar-link text-warning fw-bold">
+                <i class="bi bi-database"></i> Django Database
+            </a>
+        </li>
+
+        {% if user.is_authenticated %}
+        <li class="sidebar-item {% if active_tab == 'scan' %}active{% endif %}">
+            <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
+                <i class="bi bi-barcode-scan"></i> Barcode Scanner
+            </a>
+        </li>
+        <li class="sidebar-item {% if active_tab == 'transactions' %}active{% endif %}">
+            <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
+                <i class="bi bi-clock-history"></i> Activity Logs
+            </a>
+        </li>
+        {% endif %}
+        <li class="sidebar-item">
+            <hr class="dropdown-divider my-2">
+        </li>
+        <li class="sidebar-item">
+            {% if user.is_authenticated %}
+            <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+            {% else %}
+            <a href="{% url 'users:login' %}" class="sidebar-link text-success">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+            {% endif %}
+        </li>
+    </ul>
+</aside>

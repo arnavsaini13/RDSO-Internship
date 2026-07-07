@@ -1,81 +1,33 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Material Workspace - {{ material.material_id }}{% endblock %}
+{% block title %}Material Workspace - SR-{{ material.serial_number }}{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <!-- Left Navigation Sidebar -->
-    <aside class="dashboard-sidebar">
-        <div class="sidebar-profile">
-            <div class="profile-avatar">
-                {{ user.first_name|slice:":1"|default:user.username|slice:":1"|upper }}
-            </div>
-            <div class="profile-info">
-                <span class="profile-name">{{ user.first_name|default:user.username }}</span>
-                <span class="profile-role">IT Directorate</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="sidebar-item">
-                <a href="{% url 'documents:dashboard' %}" class="sidebar-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard Overview
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:upload_material' %}" class="sidebar-link">
-                    <i class="bi bi-cloud-upload"></i> Upload Material
-                </a>
-            </li>
-            <li class="sidebar-item active">
-                <a href="{% url 'documents:material_list' %}" class="sidebar-link">
-                    <i class="bi bi-box-seam"></i> Material Inventory
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:inventory_balance' %}" class="sidebar-link">
-                    <i class="bi bi-database"></i> Current Balances
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:scan_barcode' %}" class="sidebar-link">
-                    <i class="bi bi-barcode-scan"></i> Barcode Scanner
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'documents:transaction_history' %}" class="sidebar-link">
-                    <i class="bi bi-clock-history"></i> Activity Logs
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <hr class="dropdown-divider my-2">
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'users:logout' %}" class="sidebar-link text-danger">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </aside>
+    {% include 'inventory/sidebar.html' with active_tab='materials' %}
 
     <!-- Main Workspace -->
     <main class="dashboard-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <span class="badge border bg-light text-dark font-weight-bold px-2 py-1 mb-2" style="font-family: monospace; font-size: 0.9rem;">{{ material.material_id }}</span>
+                <span class="badge border bg-light text-dark font-weight-bold px-2 py-1 mb-2" style="font-family: monospace; font-size: 0.9rem;">SR-{{ material.serial_number }}</span>
                 <h2 class="fw-bold mb-1" style="color: var(--primary-navy);">{{ material.material_name }}</h2>
                 <p class="text-muted mb-0">Storage location: <strong>{{ material.storage_location|default:"Central Depot" }}</strong></p>
             </div>
             
             <!-- Quick Take / Return controls -->
+            {% if user.is_authenticated %}
             <div class="d-flex gap-2">
-                <a href="{% url 'documents:take_material' material.material_id %}" class="btn btn-gov-danger px-4 py-2 font-weight-bold">
+                <a href="{% url 'documents:take_material' material.serial_number %}" class="btn btn-gov-danger px-4 py-2 font-weight-bold">
                     <i class="bi bi-dash-circle"></i> Take (Deduct Stock)
                 </a>
-                <a href="{% url 'documents:return_material' material.material_id %}" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
+                <a href="{% url 'documents:return_material' material.serial_number %}" class="btn btn-gov-primary px-4 py-2 font-weight-bold">
                     <i class="bi bi-plus-circle"></i> Return (Add Stock)
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <div class="row">
@@ -86,7 +38,7 @@
                     
                     <div class="p-3 bg-light border rounded mb-3" style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
                         {% if material.barcode_image %}
-                            <img src="{{ material.barcode_image.url }}" alt="Material Barcode" class="img-fluid" style="max-height: 80px;">
+                            <img src="{{ material.barcode_image.url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid" style="max-height: 80px;">
                         {% else %}
                             <div class="text-muted small">
                                 <i class="bi bi-qr-code display-4 mb-2 d-block"></i>
@@ -95,14 +47,19 @@
                         {% endif %}
                     </div>
                     
-                    <strong class="d-block mb-4" style="font-family: monospace; font-size: 1.1rem; color: var(--primary-navy);">{{ material.material_id }}</strong>
+                    <strong class="d-block mb-4" style="font-family: monospace; font-size: 1.1rem; color: var(--primary-navy);">{{ material.barcode_data }}</strong>
 
                     <div class="d-flex flex-column gap-2">
-                        <a href="{% url 'documents:barcode_pdf' material.material_id %}" class="btn btn-gov-secondary w-100">
+                        <a href="{% url 'documents:barcode_pdf' material.serial_number %}" class="btn btn-gov-secondary w-100">
                             <i class="bi bi-file-earmark-pdf"></i> Download PDF Label
                         </a>
-                        {% if user.profile.role == 'ADMIN' or user.is_superuser %}
-                            <a href="{% url 'documents:barcode_regenerate' material.material_id %}" class="btn btn-sm btn-link text-muted mt-2 text-decoration-none">
+                        {% if material.receipt_pdf %}
+                            <a href="{{ material.receipt_pdf.url }}" target="_blank" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-filetype-pdf"></i> View Source PDF
+                            </a>
+                        {% endif %}
+                        {% if user.is_authenticated and user.profile.role == 'ADMIN' or user.is_superuser %}
+                            <a href="{% url 'documents:barcode_regenerate' material.serial_number %}" class="btn btn-sm btn-link text-muted mt-2 text-decoration-none">
                                 <i class="bi bi-arrow-clockwise"></i> Regenerate Barcode
                             </a>
                         {% endif %}
@@ -179,12 +136,32 @@
                                 <strong>₹{{ material.unit_price|default:0|floatformat:2 }} / Total: ₹{{ material.total_cost|default:0|floatformat:2 }}</strong>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <span class="text-muted d-block small font-weight-bold text-uppercase">Batch / Lot Number</span>
-                                <strong>{{ material.batch_number|default:"N/A" }}</strong>
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">RO Number</span>
+                                <strong>{{ material.ro_number|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Vendor Code</span>
+                                <strong>{{ material.vendor_code|default:"N/A" }}</strong>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <span class="text-muted d-block small font-weight-bold text-uppercase">HSN Code</span>
                                 <strong>{{ material.hsn_code|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">Consignee</span>
+                                <strong>{{ material.consignee|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">R/Note No.</span>
+                                <strong style="font-family: monospace;">{{ material.r_note_no|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">PO/AT No.</span>
+                                <strong style="font-family: monospace;">{{ material.po_at_no|default:"N/A" }}</strong>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <span class="text-muted d-block small font-weight-bold text-uppercase">PL No.</span>
+                                <strong style="font-family: monospace;">{{ material.pl_no|default:"N/A" }}</strong>
                             </div>
                         </div>
 

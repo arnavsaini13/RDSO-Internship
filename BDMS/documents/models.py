@@ -10,8 +10,8 @@ import json
 class Material(models.Model):
     """Master Materials Table - Vendor Receipts with Flexible Fields"""
     
-    # Auto-generated ID
-    material_id = models.CharField(max_length=50, unique=True)  # MAT-2026-XXXX format
+    # Auto-generated sequential serial number
+    serial_number = models.IntegerField(unique=True, verbose_name="Serial Number", default=1)
     
     # Core fields (extracted from PDF)
     material_name = models.CharField(max_length=255)
@@ -33,11 +33,18 @@ class Material(models.Model):
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
-    batch_number = models.CharField(max_length=100, blank=True, null=True)
+    ro_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="RO Number")
+    vendor_code = models.CharField(max_length=100, blank=True, null=True, verbose_name="Vendor Code")
     hsn_code = models.CharField(max_length=50, blank=True, null=True)
     storage_location = models.CharField(max_length=255, blank=True, null=True)
     condition_notes = models.TextField(blank=True, null=True)
     expiry_date = models.DateField(null=True, blank=True)
+    
+    # RDSO Specific Fields
+    consignee = models.CharField(max_length=255, blank=True, null=True)
+    r_note_no = models.CharField(max_length=100, blank=True, null=True, verbose_name="R/Note No.")
+    po_at_no = models.CharField(max_length=100, blank=True, null=True, verbose_name="PO/AT No.")
+    pl_no = models.CharField(max_length=100, blank=True, null=True, verbose_name="PL No.")
     
     # Barcode
     barcode_image = models.ImageField(
@@ -51,7 +58,7 @@ class Material(models.Model):
         unique=True,
         null=True,
         blank=True,
-        help_text='Barcode data (usually same as material_id)'
+        help_text='Barcode data (usually same as serial_number)'
     )
     
     # Tracking
@@ -62,18 +69,18 @@ class Material(models.Model):
     class Meta:
         ordering = ['-date_received']
         indexes = [
-            models.Index(fields=['material_id']),
+            models.Index(fields=['serial_number']),
             models.Index(fields=['-date_received']),
             models.Index(fields=['vendor_name']),
         ]
     
     def __str__(self):
-        return f"{self.material_id} - {self.material_name}"
+        return f"SR-{self.serial_number} - {self.material_name}"
     
     def get_all_fields(self):
         """Return all fields including extracted data"""
         data = {
-            'material_id': self.material_id,
+            'serial_number': self.serial_number,
             'material_name': self.material_name,
             'quantity': str(self.quantity),
             'vendor_name': self.vendor_name,
