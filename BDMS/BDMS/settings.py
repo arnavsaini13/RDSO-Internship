@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,15 +61,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BDMS.wsgi.application'
 
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.environ.get('DB_NAME', 'bdms_db'),
-        'USER': os.environ.get('DB_USER', 'arnavsaini13'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Arnav@132006'),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=f"postgresql://{os.environ.get('DB_USER', 'arnavsaini13')}:{os.environ.get('DB_PASSWORD', 'Arnav@132006')}@{os.environ.get('DB_HOST', '127.0.0.1')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'bdms_db')}",
+        conn_max_age=600,
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -94,6 +93,16 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Use WhiteNoise to compress and cache static files
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

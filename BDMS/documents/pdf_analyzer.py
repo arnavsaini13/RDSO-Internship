@@ -13,6 +13,12 @@ try:
     import pytesseract
     from PIL import Image
     from pdf2image import convert_from_path
+    
+    # Cross-platform Tesseract configuration
+    import os
+    from django.conf import settings
+    if hasattr(settings, 'TESSERACT_CMD') and settings.TESSERACT_CMD and os.path.exists(settings.TESSERACT_CMD):
+        pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
 except ImportError:
     pass
 
