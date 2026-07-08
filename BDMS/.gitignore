@@ -63,3 +63,7 @@ Thumbs.db
 .coverage
 .pytest_cache/
 htmlcov/
+
+# Allow seed receipts
+!seed_receipts/*.pdf
+!BDMS/seed_receipts/*.pdf
