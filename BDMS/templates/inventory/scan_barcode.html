@@ -4,6 +4,10 @@
 {% block title %}Barcode Scanner - SmartTrack IIMS 1.0{% endblock %}
 
 {% block content %}
+{% block extra_js %}
+<script src="{% static 'js/html5-qrcode.min.js' %}"></script>
+{% endblock %}
+
 <div class="dashboard-container">
     <!-- Left Navigation Sidebar -->
     {% include 'inventory/sidebar.html' with active_tab='scan' %}
@@ -26,14 +30,14 @@
                     </div>
                     <div class="card-body p-4 text-center">
                         <div class="position-relative mx-auto bg-black rounded mb-3" style="max-width: 100%; aspect-ratio: 4/3; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                            <!-- Video feed element -->
-                            <video id="scanner-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;" class="rounded"></video>
+                            <!-- Video feed element target container -->
+                            <div id="scanner-reader" style="width: 100%; height: 100%; background-color: #000000;" class="rounded"></div>
                             
                             <!-- Custom glowing laser alignment guide -->
-                            <div class="scanner-laser-bar" style="position: absolute; left: 0; width: 100%; height: 2px; background: red; box-shadow: 0 0 8px red; animation: laserSwipe 2s linear infinite; display: none;"></div>
+                            <div class="scanner-laser-bar" style="position: absolute; left: 0; width: 100%; height: 2px; background: red; box-shadow: 0 0 8px red; animation: laserSwipe 2s linear infinite; display: none; z-index: 10;"></div>
                             
                             <!-- Capture Reticle target border overlay -->
-                            <div style="position: absolute; width: 60%; height: 40%; border: 2px dashed rgba(255,255,255,0.5); border-radius: 8px;"></div>
+                            <div style="position: absolute; width: 60%; height: 40%; border: 2px dashed rgba(255,255,255,0.5); border-radius: 8px; z-index: 10; pointer-events: none;"></div>
                         </div>
 
                         <div class="d-grid gap-2">

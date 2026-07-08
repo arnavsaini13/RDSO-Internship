@@ -229,18 +229,17 @@ function initDragAndDropUploader() {
    4. Barcode Webcam Stream Capture (AJAX scanning)
    ========================================================================== */
 function initCameraScanner() {
-    const video = document.getElementById('scanner-video');
+    const readerElement = document.getElementById('scanner-reader');
     const startBtn = document.getElementById('start-scanner-btn');
     const scanBar = document.querySelector('.scanner-laser-bar');
     const resultsContainer = document.getElementById('scanner-results-card');
 
-    if (!video || !startBtn) return;
+    if (!readerElement || !startBtn) return;
 
-    let localStream = null;
-    let scanInterval = null;
+    let html5QrCode = null;
 
     startBtn.addEventListener('click', function() {
-        if (localStream) {
+        if (html5QrCode && html5QrCode.isScanning) {
             stopScanner();
             return;
         }
@@ -248,94 +247,110 @@ function initCameraScanner() {
         startBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Initializing Camera...`;
         startBtn.disabled = true;
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(function(stream) {
-                video.srcObject = stream;
-                localStream = stream;
-                startBtn.innerHTML = `<i class="bi bi-camera-video-off"></i> Stop Camera`;
-                startBtn.disabled = false;
-                startBtn.classList.remove('btn-gov-primary');
-                startBtn.classList.add('btn-gov-danger');
-                if (scanBar) scanBar.style.display = 'block';
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("scanner-reader");
+        }
 
-                // Start sending capture frames every 1.5 seconds for decoding
-                scanInterval = setInterval(captureAndDecodeFrame, 1500);
-            })
-            .catch(function(err) {
-                console.error("Camera access failed:", err);
-                alert("Could not access camera: Make sure to grant permission or verify no other app is using it.");
-                startBtn.innerHTML = `<i class="bi bi-camera-video"></i> Start Webcam`;
-                startBtn.disabled = false;
-            });
+        const config = { 
+            fps: 15, 
+            qrbox: function(width, height) {
+                // Return a landscape-oriented box for linear barcodes
+                return { width: Math.floor(width * 0.75), height: Math.floor(height * 0.4) };
+            }
+        };
+
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess, 
+            onScanFailure
+        )
+        .then(() => {
+            startBtn.innerHTML = `<i class="bi bi-camera-video-off"></i> Stop Camera`;
+            startBtn.disabled = false;
+            startBtn.classList.remove('btn-gov-primary');
+            startBtn.classList.add('btn-gov-danger');
+            if (scanBar) scanBar.style.display = 'block';
+        })
+        .catch(err => {
+            console.error("Camera access failed:", err);
+            alert("Could not access camera: Make sure to grant permission or verify no other app is using it.");
+            startBtn.innerHTML = `<i class="bi bi-camera-video"></i> Start Webcam`;
+            startBtn.disabled = false;
+        });
     });
 
     function stopScanner() {
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                resetUI();
+            }).catch(err => console.error("Failed to stop scanner:", err));
+        } else {
+            resetUI();
         }
-        if (video) video.srcObject = null;
-        if (scanInterval) {
-            clearInterval(scanInterval);
-            scanInterval = null;
-        }
-        if (scanBar) scanBar.style.display = 'none';
+    }
 
+    function resetUI() {
+        if (scanBar) scanBar.style.display = 'none';
         startBtn.innerHTML = `<i class="bi bi-camera-video"></i> Start Webcam`;
         startBtn.classList.remove('btn-gov-danger');
         startBtn.classList.add('btn-gov-primary');
     }
 
-    function captureAndDecodeFrame() {
-        if (!localStream) return;
-
-        // Create virtual offscreen canvas to capture frame
-        const tempCanvas = document.createElement('canvas');
-        const width = video.videoWidth || 640;
-        const height = video.videoHeight || 480;
-        tempCanvas.width = width;
-        tempCanvas.height = height;
+    function onScanSuccess(decodedText, decodedResult) {
+        // Play success beep using web audio API
+        playBeep();
         
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-        
-        const base64Data = tempCanvas.toDataURL('image/png');
+        // Halt scanner
+        stopScanner();
 
-        // Send AJAX POST
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
-        fetch('', {
-            method: 'POST',
+        // Perform AJAX GET to lookup material details using barcode
+        fetch(`?barcode=${encodeURIComponent(decodedText)}`, {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            body: new URLSearchParams({
-                'canvas_data': base64Data
-            })
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Play notification beep sound if desired, and halt scanner
-                stopScanner();
                 renderScannerMatch(data);
+            } else {
+                alert(`Scanned: ${decodedText}\nError: ${data.error}`);
             }
         })
         .catch(err => console.error("Scanner query failed:", err));
+    }
+
+    function onScanFailure(error) {
+        // Silent scan failures
+    }
+
+    function playBeep() {
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.frequency.value = 1000;
+            gain.gain.setValueAtTime(0.2, context.currentTime);
+            osc.start();
+            osc.stop(context.currentTime + 0.12);
+        } catch (e) {
+            console.log("Audio beep failed:", e);
+        }
     }
 
     function renderScannerMatch(material) {
         if (!resultsContainer) return;
 
         resultsContainer.innerHTML = `
-            <div class="card border-0 shadow-sm mt-4">
-                <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0"><i class="bi bi-barcode"></i> Material Found!</h5>
-                    <span class="badge bg-white text-success font-weight-bold">${material.barcode}</span>
+            <div class="card border-0 shadow-sm mt-4" style="border-radius: 12px; border-left: 4px solid var(--accent-green) !important;">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0 fw-bold" style="color: var(--accent-green);"><i class="bi bi-check-circle-fill"></i> Material Found!</h5>
+                    <span class="badge border bg-light text-dark font-weight-bold" style="font-family: monospace;">${material.barcode}</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <h4 class="fw-bold mb-3" style="color: var(--primary-navy);">${material.material_name}</h4>
                     <div class="row">
                         <div class="col-md-6 mb-2">
@@ -356,8 +371,8 @@ function initCameraScanner() {
                         </div>
                     </div>
                     <div class="d-grid mt-4">
-                        <a href="/material/${material.serial_number}/barcode/" class="btn btn-gov-primary">
-                            <i class="bi bi-box-seam"></i> Open Material Workspace
+                        <a href="/material/${material.serial_number}/" class="btn btn-gov-primary text-uppercase font-weight-bold">
+                            Open Material Workspace <i class="bi bi-box-seam"></i>
                         </a>
                     </div>
                 </div>

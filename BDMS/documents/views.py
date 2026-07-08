@@ -537,6 +537,23 @@ def scan_barcode(request):
         material = get_material_by_barcode(barcode_get)
         if not material:
             error_message = f"Material not found for barcode: {barcode_get}"
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_message})
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'barcode': barcode_data,
+                    'serial_number': material.serial_number,
+                    'material_name': material.material_name,
+                    'vendor_name': material.vendor_name,
+                    'quantity': str(material.quantity),
+                    'current_balance': str(material.balance.available_quantity),
+                    'date_received': material.date_received.strftime('%d %b %Y') if material.date_received else 'N/A',
+                    'category': material.category or 'N/A',
+                    'ro_number': material.ro_number or 'N/A',
+                    'vendor_code': material.vendor_code or 'N/A',
+                })
             
     if request.method == 'POST':
         # Check if this is a camera capture (AJAX request with canvas data)
@@ -642,8 +659,12 @@ def barcode_pdf(request, serial_number):
     
     material = get_object_or_404(Material, serial_number=serial_number)
     
-    if not material.barcode_image:
-        messages.error(request, "Barcode not generated for this material")
+    if not material.barcode_image or not os.path.exists(material.barcode_image.path):
+        from .barcode_utils import regenerate_barcode
+        regenerate_barcode(material)
+        
+    if not material.barcode_image or not os.path.exists(material.barcode_image.path):
+        messages.error(request, "Barcode image file is missing and could not be generated.")
         return redirect('documents:material_detail', pk=material.id)
     
     try:
