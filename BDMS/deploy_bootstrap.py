@@ -7,6 +7,7 @@ django.setup()
 
 from django.core.management import call_command
 from documents.models import Material
+from django.contrib.auth.models import User
 
 def main():
     # 1. Run database migrations
@@ -17,9 +18,10 @@ def main():
     material_count = Material.objects.count()
     print(f"[BOOTSTRAP] Detected {material_count} materials in the database.")
 
-    if material_count == 0:
-        print("[BOOTSTRAP] Database is empty. Initiating data load from db_dump.json...")
+    if material_count < 11:
+        print("[BOOTSTRAP] Database lacks the 11 items. Flushing and loading db_dump.json...")
         try:
+            call_command('flush', interactive=False)
             call_command('loaddata', 'db_dump.json')
             print("[BOOTSTRAP] Database loaded successfully.")
 
@@ -28,12 +30,9 @@ def main():
             regenerate_barcodes()
         except Exception as e:
             print(f"[BOOTSTRAP] ERROR loading initial data: {e}")
-    else:
-        print("[BOOTSTRAP] Database already initialized. Skipping mock/import load to preserve live updates.")
-
+            
     # 4. Force set password for admin@rdso.railnet.gov.in to Admin@123456
     try:
-        from django.contrib.auth.models import User
         u = User.objects.filter(email__iexact='admin@rdso.railnet.gov.in').first()
         if u:
             u.set_password('Admin@123456')
