@@ -662,6 +662,7 @@ def barcode_pdf(request, serial_number):
     if not material.barcode_image or not os.path.exists(material.barcode_image.path):
         from .barcode_utils import regenerate_barcode
         regenerate_barcode(material)
+        material.refresh_from_db()
         
     if not material.barcode_image or not os.path.exists(material.barcode_image.path):
         messages.error(request, "Barcode image file is missing and could not be generated.")
