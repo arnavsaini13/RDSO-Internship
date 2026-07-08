@@ -74,12 +74,24 @@ def generate_material_barcode(material):
 def _decode_with_opencv_or_pyzbar(img) -> str:
     """
     Decodes barcode from an image using OpenCV's native BarcodeDetector
-    with a fallback to pyzbar if available.
+    with fallbacks to zxingcpp and pyzbar if available.
     """
     if img is None:
         return None
         
-    # 1. Try OpenCV native barcode detector
+    # 1. Try zxing-cpp if available (highly robust, zero-dependency C++ port)
+    try:
+        import zxingcpp
+        results = zxingcpp.read_barcodes(img)
+        for r in results:
+            if r.text:
+                return r.text.strip()
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"zxingcpp decoding failed: {e}")
+        
+    # 2. Try OpenCV native barcode detector
     try:
         detector = cv2.barcode.BarcodeDetector()
         retval, decoded_info, decoded_type, points = detector.detectAndDecode(img)
@@ -88,7 +100,7 @@ def _decode_with_opencv_or_pyzbar(img) -> str:
     except Exception:
         pass
         
-    # 2. Try pyzbar if available and successfully loaded
+    # 3. Try pyzbar if available and successfully loaded
     if PYZBAR_AVAILABLE:
         try:
             decoded = pyzbar.decode(img)

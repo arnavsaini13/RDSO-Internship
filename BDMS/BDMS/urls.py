@@ -14,7 +14,7 @@ def custom_serve_media(request, path, document_root=None, **kwargs):
     # Auto-copy seed PDF from repo directory to media storage if missing on Render
     if not os.path.exists(full_path):
         file_name = os.path.basename(path)
-        source_in_repo = os.path.join(settings.BASE_DIR, file_name)
+        source_in_repo = os.path.join(settings.BASE_DIR, 'seed_receipts', file_name)
         if os.path.exists(source_in_repo):
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
             try:
