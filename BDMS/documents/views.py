@@ -158,7 +158,7 @@ def upload_material(request):
                 # Store in session for preview/confirmation
                 request.session['pdf_data'] = extracted_data
                 request.session['pdf_file_name'] = receipt_pdf.name
-                request.session['pdf_temp_path'] = os.path.join('temp_uploads', filename)
+                request.session['pdf_temp_path'] = f"temp_uploads/{filename}"
                 
                 messages.success(request, 'PDF analyzed successfully! Please confirm the extracted data.')
                 return redirect('documents:confirm_material')
@@ -206,7 +206,7 @@ def confirm_material(request):
                 pass
             
             # Load PDF file from local storage using Django File wrapper (seamless, no re-upload required!)
-            absolute_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_temp_path)
+            absolute_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_temp_path.replace('\\', '/'))
             if not os.path.exists(absolute_pdf_path):
                 messages.error(request, 'Source file could not be found. Please re-upload your invoice.')
                 return redirect('documents:upload_material')

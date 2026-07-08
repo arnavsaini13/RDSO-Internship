@@ -59,8 +59,8 @@
                         <form method="POST" enctype="multipart/form-data" action="{% url 'documents:scan_barcode' %}">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <label for="barcodeImage" class="form-label font-weight-bold" style="color: var(--primary-navy);">Select Barcode Image (JPG/PNG)</label>
-                                <input type="file" class="form-control" id="barcodeImage" name="barcode_image" accept="image/*" required>
+                                <label for="barcodeImage" class="form-label font-weight-bold" style="color: var(--primary-navy);">Select Barcode Image (JPG/PNG) or PDF Label</label>
+                                <input type="file" class="form-control" id="barcodeImage" name="barcode_image" accept="image/*,.pdf" required>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-gov-secondary font-weight-bold py-2">
