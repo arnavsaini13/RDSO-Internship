@@ -31,5 +31,18 @@ def main():
     else:
         print("[BOOTSTRAP] Database already initialized. Skipping mock/import load to preserve live updates.")
 
+    # 4. Force set password for admin@rdso.railnet.gov.in to Admin@123456
+    try:
+        from django.contrib.auth.models import User
+        u = User.objects.filter(email__iexact='admin@rdso.railnet.gov.in').first()
+        if u:
+            u.set_password('Admin@123456')
+            u.save()
+            print("[BOOTSTRAP] Successfully set password for admin@rdso.railnet.gov.in to Admin@123456")
+        else:
+            print("[BOOTSTRAP] Admin user admin@rdso.railnet.gov.in not found to set password.")
+    except Exception as e:
+        print(f"[BOOTSTRAP] ERROR setting admin password: {e}")
+
 if __name__ == '__main__':
     main()
