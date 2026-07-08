@@ -53,7 +53,7 @@
                         <a href="{% url 'documents:barcode_pdf' material.serial_number %}" class="btn btn-gov-secondary w-100">
                             <i class="bi bi-file-earmark-pdf"></i> Download PDF Label
                         </a>
-                        {% if material.receipt_pdf %}
+                        {% if material.receipt_pdf and receipt_pdf_exists %}
                             <a href="{{ material.receipt_pdf.url }}" target="_blank" class="btn btn-outline-danger w-100">
                                 <i class="bi bi-filetype-pdf"></i> View Source PDF
                             </a>

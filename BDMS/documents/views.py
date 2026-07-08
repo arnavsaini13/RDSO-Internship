@@ -307,13 +307,29 @@ def material_detail(request, pk):
     """Material detail view"""
     
     material = get_object_or_404(Material, pk=pk)
+    
+    # Auto-regenerate barcode image if it is missing from Render's ephemeral storage
+    if material.barcode_image and not os.path.exists(material.barcode_image.path):
+        from .barcode_utils import regenerate_barcode
+        regenerate_barcode(material)
+        material.refresh_from_db()
+        
     balance = material.balance
     transactions = material.transactions.all()
     
+    # Verify if receipt PDF exists physically on disk (prevents broken links after container redeploys)
+    receipt_pdf_exists = False
+    if material.receipt_pdf:
+        try:
+            receipt_pdf_exists = os.path.exists(material.receipt_pdf.path)
+        except Exception:
+            pass
+            
     context = {
         'material': material,
         'balance': balance,
         'transactions': transactions,
+        'receipt_pdf_exists': receipt_pdf_exists,
     }
     
     return render(request, 'inventory/material_detail.html', context)
