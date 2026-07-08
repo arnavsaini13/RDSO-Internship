@@ -21,6 +21,18 @@
                 <div class="p-3 mb-4 bg-light rounded border border-dashed font-monospace fw-bold text-dark fs-6" style="background-color: #fafbfc !important;">
                     {{ email }}
                 </div>
+
+                {% if email_failed %}
+                <div class="alert alert-warning border-0 text-start small mb-4" style="background-color: #fff3cd; color: #856404; border-radius: 10px;">
+                    <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill"></i> SMTP Email Server Not Configured:</h6>
+                    <p class="mb-2">Since the SMTP server is not set up on this free Render deployment, the email could not be sent. However, since you are in Demo/Evaluation mode, you can verify your account immediately by clicking the button below:</p>
+                    <div class="text-center my-3">
+                        <a href="{{ verify_url }}" class="btn btn-gov-primary py-2 px-4 fw-bold text-uppercase" style="font-size: 0.9rem; background-color: var(--accent-green) !important;">
+                            Verify My Account <i class="bi bi-shield-check ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
                 
                 <div class="alert alert-info border-0 text-start small mb-4" style="background-color: #e8f4fd; color: #1d6fa5; border-radius: 10px;">
                     <h6 class="fw-bold mb-1"><i class="bi bi-info-circle-fill"></i> Important Steps:</h6>

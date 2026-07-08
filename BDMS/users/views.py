@@ -120,6 +120,7 @@ def verify_link_view(request, token):
     )
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@rdso.railnet.gov.in')
     
+    email_failed = False
     try:
         send_mail(
             subject,
@@ -131,10 +132,18 @@ def verify_link_view(request, token):
         logger.info(f"Temporary password sent to {email} successfully.")
     except Exception as e:
         logger.error(f"Failed to send temporary password email to {email}: {e}")
-        messages.error(request, "Failed to send temporary password email. Please contact support.")
+        email_failed = True
 
-    messages.success(request, "Email verified successfully! We have sent your temporary login password to your registered email.")
-    return redirect('users:login')
+    if email_failed:
+        return render(request, 'users/verification_success.html', {
+            'username': profile.username,
+            'email': email,
+            'temp_password': temp_password,
+            'page_title': 'Account Verified'
+        })
+    else:
+        messages.success(request, "Email verified successfully! We have sent your temporary login password to your registered email.")
+        return redirect('users:login')
 
 
 @login_required(login_url='users:login')
@@ -214,6 +223,7 @@ def signup(request):
             )
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@rdso.railnet.gov.in')
             
+            email_failed = False
             try:
                 send_mail(
                     subject,
@@ -225,10 +235,12 @@ def signup(request):
                 logger.info(f"Verification email sent to {email} successfully.")
             except Exception as e:
                 logger.error(f"Failed to send verification email to {email}: {e}")
-                messages.error(request, "Failed to send verification email. Please check your email configuration.")
+                email_failed = True
                 
             return render(request, 'users/link_sent.html', {
                 'email': email,
+                'verify_url': verify_url,
+                'email_failed': email_failed,
                 'page_title': 'Verification Link Sent'
             })
     else:
