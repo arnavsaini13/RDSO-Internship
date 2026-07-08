@@ -18,8 +18,10 @@ try:
     # 2. Check and load dump
     material_count = Material.objects.count()
     print(f"[WSGI-BOOTSTRAP] Detected {material_count} materials.")
-    if material_count == 0:
-        print("[WSGI-BOOTSTRAP] Database is empty. Loading db_dump.json...")
+    if material_count < 11:
+        print("[WSGI-BOOTSTRAP] Database lacks the 11 local items. Clearing and loading db_dump.json...")
+        Material.objects.all().delete()
+        User.objects.all().delete()
         call_command('loaddata', 'db_dump.json')
         print("[WSGI-BOOTSTRAP] Database loaded successfully.")
         

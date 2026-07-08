@@ -36,8 +36,8 @@ def login_view(request):
                 messages.error(request, "Account does not exist. Please register first.")
                 return render(request, 'users/login.html', {'form': form, 'page_title': 'Login'})
             
-            # Authenticate using Django auth with email as username
-            authenticated_user = authenticate(request, username=email, password=password)
+            # Authenticate using Django auth with actual username field
+            authenticated_user = authenticate(request, username=user.username, password=password)
             if authenticated_user is not None:
                 if not authenticated_user.is_active:
                     messages.error(request, "This account is inactive. Please verify your email first.")
