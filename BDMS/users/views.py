@@ -121,18 +121,22 @@ def verify_link_view(request, token):
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@rdso.railnet.gov.in')
     
     email_failed = False
-    try:
-        send_mail(
-            subject,
-            message,
-            from_email,
-            [email],
-            fail_silently=False,
-        )
-        logger.info(f"Temporary password sent to {email} successfully.")
-    except Exception as e:
-        logger.error(f"Failed to send temporary password email to {email}: {e}")
+    if not getattr(settings, 'EMAIL_HOST_USER', None):
         email_failed = True
+        logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
+    else:
+        try:
+            send_mail(
+                subject,
+                message,
+                from_email,
+                [email],
+                fail_silently=False,
+            )
+            logger.info(f"Temporary password sent to {email} successfully.")
+        except Exception as e:
+            logger.error(f"Failed to send temporary password email to {email}: {e}")
+            email_failed = True
 
     if email_failed:
         return render(request, 'users/verification_success.html', {
@@ -224,18 +228,22 @@ def signup(request):
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@rdso.railnet.gov.in')
             
             email_failed = False
-            try:
-                send_mail(
-                    subject,
-                    message,
-                    from_email,
-                    [email],
-                    fail_silently=False,
-                )
-                logger.info(f"Verification email sent to {email} successfully.")
-            except Exception as e:
-                logger.error(f"Failed to send verification email to {email}: {e}")
+            if not getattr(settings, 'EMAIL_HOST_USER', None):
                 email_failed = True
+                logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
+            else:
+                try:
+                    send_mail(
+                        subject,
+                        message,
+                        from_email,
+                        [email],
+                        fail_silently=False,
+                    )
+                    logger.info(f"Verification email sent to {email} successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to send verification email to {email}: {e}")
+                    email_failed = True
                 
             return render(request, 'users/link_sent.html', {
                 'email': email,

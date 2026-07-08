@@ -21,6 +21,8 @@ try:
     if material_count < 11:
         print("[WSGI-BOOTSTRAP] Database lacks the 11 local items. Clearing and loading db_dump.json...")
         Material.objects.all().delete()
+        from users.models import UserProfile
+        UserProfile.objects.all().delete()
         User.objects.all().delete()
         call_command('loaddata', 'db_dump.json')
         print("[WSGI-BOOTSTRAP] Database loaded successfully.")
@@ -37,6 +39,12 @@ try:
         print("[WSGI-BOOTSTRAP] Admin password force-set successfully to Admin@123456.")
     else:
         print("[WSGI-BOOTSTRAP] Admin user not found.")
+        
+    # 4. Close database connections so they are not shared with Gunicorn forks (prevents SSL errors)
+    from django.db import connections
+    for conn in connections.all():
+        conn.close()
+    print("[WSGI-BOOTSTRAP] Closed all boot-time database connections to prevent Gunicorn fork-sharing SSL issues.")
         
 except Exception as e:
     print(f"[WSGI-BOOTSTRAP] ERROR: {e}")
