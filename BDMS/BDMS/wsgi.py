@@ -20,7 +20,7 @@ try:
     print(f"[WSGI-BOOTSTRAP] Detected {material_count} materials.")
     if material_count < 11:
         print("[WSGI-BOOTSTRAP] Database lacks the 11 local items. Flushing and loading db_dump.json...")
-        call_command('flush', no_input=True)
+        call_command('flush', interactive=False)
         call_command('loaddata', 'db_dump.json')
         print("[WSGI-BOOTSTRAP] Database loaded successfully.")
         
