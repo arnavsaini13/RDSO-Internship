@@ -10,3 +10,4 @@ opencv-python-headless>=4.9.0.80
 whitenoise==6.6.0
 gunicorn==21.2.0
 dj-database-url==2.1.0
+requests==2.32.3
