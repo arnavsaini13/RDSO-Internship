@@ -146,7 +146,8 @@ class PDFAnalyzer:
         # Find start index
         start_idx = -1
         for i, line in enumerate(lines):
-            if "description & drg" in line.lower():
+            l_lower = line.lower()
+            if "description" in l_lower and ("drg" in l_lower or "spec" in l_lower or "&" in l_lower or (i + 1 < len(lines) and "drg" in lines[i+1].lower())):
                 start_idx = i
                 break
                 
