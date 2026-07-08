@@ -25,14 +25,7 @@ except ImportError:
 try:
     import fitz  # PyMuPDF
 except ImportError:
-    import subprocess
-    import sys
-    print("PyMuPDF (fitz) not found. Auto-installing dependencies via pip...")
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pymupdf"])
-        import fitz
-    except Exception as e:
-        print(f"Failed to install PyMuPDF: {e}")
+    pass
 
 
 class PDFAnalyzer:
