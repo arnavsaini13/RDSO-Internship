@@ -1,0 +1,1038 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$58WMtm33ZlOIvML9OeQvqE$PD4riuA4iGkPG8cM5WlcQj4dfbtBNghcNhigM3kp97Q=",
+    "last_login": "2026-07-07T13:02:41.893Z",
+    "is_superuser": true,
+    "username": "admin@bdms.local",
+    "first_name": "Super",
+    "last_name": "Admin",
+    "email": "admin@bdms.local",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-06-01T19:10:07.432Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$qS6t5wdYD6ZbbDxlJ9Irrl$x8PXpifGzlSgRewfLKqpHb+c5pnZiORRa7cSHxWUQJY=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "directorate",
+    "first_name": "Rajesh",
+    "last_name": "Kumar",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-01T21:21:23.991Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$CIhNpIpVVvamcW12AHxc2a$DABHW81CbG0ZugzG1/uTJzh5AJfdVNXxjjf0+2Oa5Y8=",
+    "last_login": "2026-06-02T04:57:34.721Z",
+    "is_superuser": false,
+    "username": "scrutiny",
+    "first_name": "Amit",
+    "last_name": "Sharma",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-01T21:21:25.112Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$i4gy2jCm6ANussf5Ur8FpS$8edJUnhck2JCDQBUv0w4yXWGICBA/BgbP7sytb37Pe4=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "manager",
+    "first_name": "Sanjay",
+    "last_name": "Singh",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-06-01T21:21:26.129Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$8jerqYaZqItKIzscqRZifB$WkzFF/qlZIHb5ElSik/lVxy271ORJWwrSt8XQCi92v0=",
+    "last_login": "2026-06-02T05:44:32.937Z",
+    "is_superuser": false,
+    "username": "arnav@example.com",
+    "first_name": "Arnav",
+    "last_name": "Saini",
+    "email": "arnav@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-02T05:44:31.494Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$uEovS6OiMy4xZa5RI5m2bn$HCZVQ8ur+88uM+cuuSrBT5EpGHJC+mxM29JCsoiSmEE=",
+    "last_login": "2026-06-02T05:53:53.201Z",
+    "is_superuser": false,
+    "username": "amit@example.com",
+    "first_name": "Amit",
+    "last_name": "Agarwal",
+    "email": "amit@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-02T05:53:51.753Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 11,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$kvai2IdyAwaGqMxdmSQyQP$wu9lHTSatbV31aAFloKRktkkLCZfUMPVGf9fvqedvsI=",
+    "last_login": "2026-07-03T05:29:41.685Z",
+    "is_superuser": true,
+    "username": "admin@rdso.railnet.gov.in",
+    "first_name": "Super",
+    "last_name": "Admin",
+    "email": "admin@rdso.railnet.gov.in",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-06-03T06:50:56.978Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 12,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$tLqUBKR8aisRhxG8AT5boJ$x0/kKg4/7n5MIaiFpTBMuiPDuM83ay+wjuw+IVJ5lp0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "directorate@rdso.railnet.gov.in",
+    "first_name": "Rajesh",
+    "last_name": "Kumar",
+    "email": "directorate@rdso.railnet.gov.in",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-03T06:50:57.980Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 13,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$T1we4fqIXtj4tpeLOKnUDn$kEZ2UlOK7mJBdAF6m0+Lr8r/vKKfE8IjNNMelwQ4MAI=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "scrutiny@rdso.railnet.gov.in",
+    "first_name": "Amit",
+    "last_name": "Sharma",
+    "email": "scrutiny@rdso.railnet.gov.in",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-03T06:50:58.996Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 14,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$3yTEts3IdSM93v5i8ZimDK$gb3e8cn3YP5mTQrOlAVWcuUmcu6y0Dhtbpo9FFzEvo4=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "manager@rdso.railnet.gov.in",
+    "first_name": "Sanjay",
+    "last_name": "Singh",
+    "email": "manager@rdso.railnet.gov.in",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-06-03T06:50:59.975Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 19,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$6GECiJRgfM5f3zI2IiQ7Oy$Cyy0s1B5/ruDmqtKGfYqdfScZdj1SJaTvouF0pnlVHs=",
+    "last_login": "2026-07-03T05:32:30.455Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-06-04T21:56:50.487Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 20,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$CuZ81sTM7qCK4ILmB2GQdK$B3kjwO8aquiOmQkJkcggxXu4ZJKHHtfZaLnCtw+4k3g=",
+    "last_login": "2026-07-07T13:07:44.816Z",
+    "is_superuser": false,
+    "username": "8b.arnavsaini@gmail.com",
+    "first_name": "Arnav",
+    "last_name": "Saini",
+    "email": "8b.arnavsaini@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-05T05:02:10.573Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 21,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$NbPEZ0HWl3gxz6xUHKlY1w$VqbhxGFn4B1UEr3SpaJquMDthcQbIP5RMheg7PJUOro=",
+    "last_login": "2026-06-05T05:15:02.730Z",
+    "is_superuser": false,
+    "username": "arnav25100@iiitnr.edu.in",
+    "first_name": "Aryan",
+    "last_name": "Jain",
+    "email": "arnav25100@iiitnr.edu.in",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-05T05:14:13.116Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 22,
+  "fields": {
+    "password": "!Y2wjzUqjnimPGILn0KegwFVvRyHbHVp7t7bclCp4",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "testuser@example.com",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "testuser@example.com",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-07-01T05:57:31.389Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 23,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$Pe8oCvPaosVFvPebSyMKqp$RZWrJRV+oZf7DEwR8cl9eANwzAuTcwhu+KwuDonspr8=",
+    "last_login": "2026-07-07T11:32:06.481Z",
+    "is_superuser": false,
+    "username": "arnav131106@gmail.com",
+    "first_name": "Aryan",
+    "last_name": "Jain",
+    "email": "arnav131106@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-07-07T11:30:50.890Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "username": "admin",
+    "email": "admin@rdso.railnet.gov.in",
+    "password": "Admin@123456",
+    "phone": "",
+    "designation": "System Administrator",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-01T19:10:07.438Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "username": "directorate",
+    "email": "directorate@rdso.railnet.gov.in",
+    "password": "User@123456",
+    "phone": "",
+    "designation": "Senior Section Engineer",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-01T21:21:24.008Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "username": "scrutiny",
+    "email": "scrutiny@rdso.railnet.gov.in",
+    "password": "Scrutiny@123456",
+    "phone": "",
+    "designation": "Stores Officer",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-01T21:21:25.118Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 4,
+  "fields": {
+    "user": 4,
+    "username": "manager",
+    "email": "manager@rdso.railnet.gov.in",
+    "password": "Manager@123456",
+    "phone": "",
+    "designation": "Executive Director",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-01T21:21:26.131Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 5,
+  "fields": {
+    "user": 5,
+    "username": "Arnav",
+    "email": "arnav@example.com",
+    "password": "",
+    "phone": "",
+    "designation": "System Administrator",
+    "age": 18,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-02T05:44:32.905Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "username": "Amit",
+    "email": "amit@example.com",
+    "password": "",
+    "phone": "",
+    "designation": "Senior Section Engineer",
+    "age": 83,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-02T05:53:53.181Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 11,
+  "fields": {
+    "user": 11,
+    "username": "admin",
+    "email": "admin@rdso.railnet.gov.in",
+    "password": "Admin@123456",
+    "phone": "",
+    "designation": "System Administrator",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-03T06:50:56.984Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 12,
+  "fields": {
+    "user": 12,
+    "username": "directorate",
+    "email": "directorate@rdso.railnet.gov.in",
+    "password": "User@123456",
+    "phone": "",
+    "designation": "Senior Section Engineer",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-03T06:50:57.983Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 13,
+  "fields": {
+    "user": 13,
+    "username": "scrutiny",
+    "email": "scrutiny@rdso.railnet.gov.in",
+    "password": "Scrutiny@123456",
+    "phone": "",
+    "designation": "Stores Officer",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-03T06:50:58.998Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 14,
+  "fields": {
+    "user": 14,
+    "username": "manager",
+    "email": "manager@rdso.railnet.gov.in",
+    "password": "Manager@123456",
+    "phone": "",
+    "designation": "Executive Director",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-03T06:50:59.977Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 19,
+  "fields": {
+    "user": 19,
+    "username": "",
+    "email": "",
+    "password": "",
+    "phone": "",
+    "designation": "",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-04T21:56:50.504Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 20,
+  "fields": {
+    "user": 20,
+    "username": "Arnav Saini",
+    "email": "8b.arnavsaini@gmail.com",
+    "password": "Arnav@132006",
+    "phone": "+91 9235157872",
+    "designation": "",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-06-05T05:02:10.701Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 21,
+  "fields": {
+    "user": 21,
+    "username": "Aryan Jain",
+    "email": "arnav25100@iiitnr.edu.in",
+    "password": "7Y3mtLCu2K",
+    "phone": "9235157872",
+    "designation": "",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": true,
+    "created_at": "2026-06-05T05:14:13.173Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 22,
+  "fields": {
+    "user": 22,
+    "username": "testuser",
+    "email": "testuser@example.com",
+    "password": "",
+    "phone": "9876543210",
+    "designation": "",
+    "age": null,
+    "is_active": false,
+    "is_temp_password": false,
+    "created_at": "2026-07-01T05:57:31.442Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 23,
+  "fields": {
+    "user": 23,
+    "username": "Aryan Jain",
+    "email": "arnav131106@gmail.com",
+    "password": "Arnav@132006",
+    "phone": "+91 9235157872",
+    "designation": "",
+    "age": null,
+    "is_active": true,
+    "is_temp_password": false,
+    "created_at": "2026-07-07T11:30:50.917Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 18,
+  "fields": {
+    "serial_number": 1,
+    "material_name": "Heavy Duty Steel Rail Joint Clamp",
+    "quantity": "120.00",
+    "receipt_pdf": "receipts/mock_receipt.pdf",
+    "extracted_data": {},
+    "vendor_name": "Railway Steel Components Ltd",
+    "date_received": "2026-06-02",
+    "unit_price": "450.00",
+    "total_cost": "54000.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-87612",
+    "vendor_code": "V-STEEL-98",
+    "hsn_code": "73021010",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11001",
+    "po_at_no": "PO-RDSO-87612",
+    "pl_no": "PL-7302-01",
+    "barcode_image": "barcodes/barcode_1_PSWAe9N.png",
+    "barcode_data": "SR-00000001",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.097Z",
+    "updated_at": "2026-07-07T11:27:20.144Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 19,
+  "fields": {
+    "serial_number": 2,
+    "material_name": "High Strength Track Switches and Crossings",
+    "quantity": "45.00",
+    "receipt_pdf": "receipts/mock_receipt_2.pdf",
+    "extracted_data": {},
+    "vendor_name": "Bharat Heavy Electricals Ltd",
+    "date_received": "2026-06-03",
+    "unit_price": "1250.00",
+    "total_cost": "56250.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-44512",
+    "vendor_code": "V-BHEL-02",
+    "hsn_code": "73023000",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11002",
+    "po_at_no": "PO-RDSO-44512",
+    "pl_no": "PL-7302-02",
+    "barcode_image": "barcodes/barcode_2_Nh8C5bN.png",
+    "barcode_data": "SR-00000002",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.148Z",
+    "updated_at": "2026-07-07T11:27:20.165Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 20,
+  "fields": {
+    "serial_number": 3,
+    "material_name": "Heavy Duty Steel Sleepers",
+    "quantity": "200.00",
+    "receipt_pdf": "receipts/mock_receipt_3.pdf",
+    "extracted_data": {},
+    "vendor_name": "Tata Steel Long Products Ltd",
+    "date_received": "2026-06-05",
+    "unit_price": "850.00",
+    "total_cost": "170000.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-10350",
+    "vendor_code": "V-TATA-33",
+    "hsn_code": "73029000",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11003",
+    "po_at_no": "PO-RDSO-10350",
+    "pl_no": "PL-7302-03",
+    "barcode_image": "barcodes/barcode_3_HwaVv0k.png",
+    "barcode_data": "SR-00000003",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.169Z",
+    "updated_at": "2026-07-07T11:27:20.185Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 21,
+  "fields": {
+    "serial_number": 4,
+    "material_name": "Elastic Rail Clip (ERC) MK-V",
+    "quantity": "500.00",
+    "receipt_pdf": "receipts/mock_receipt_4.pdf",
+    "extracted_data": {},
+    "vendor_name": "Rail Fasteners India Pvt Ltd",
+    "date_received": "2026-06-08",
+    "unit_price": "85.00",
+    "total_cost": "42500.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-10892",
+    "vendor_code": "V-FAST-12",
+    "hsn_code": "73029010",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11004",
+    "po_at_no": "PO-RDSO-10892",
+    "pl_no": "PL-7302-04",
+    "barcode_image": "barcodes/barcode_4_mFjaTxq.png",
+    "barcode_data": "SR-00000004",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.188Z",
+    "updated_at": "2026-07-07T11:27:20.206Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 22,
+  "fields": {
+    "serial_number": 5,
+    "material_name": "LED Main Signal Lighting Unit",
+    "quantity": "80.00",
+    "receipt_pdf": "receipts/mock_receipt.pdf",
+    "extracted_data": {},
+    "vendor_name": "Siemens Mobility Solutions",
+    "date_received": "2026-06-10",
+    "unit_price": "1800.00",
+    "total_cost": "144000.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-21940",
+    "vendor_code": "V-SIEM-99",
+    "hsn_code": "85301010",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11005",
+    "po_at_no": "PO-RDSO-21940",
+    "pl_no": "PL-8530-01",
+    "barcode_image": "barcodes/barcode_5.png",
+    "barcode_data": "SR-00000005",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.210Z",
+    "updated_at": "2026-07-07T11:27:20.224Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 23,
+  "fields": {
+    "serial_number": 6,
+    "material_name": "Electronic Interlocking Module",
+    "quantity": "15.00",
+    "receipt_pdf": "receipts/mock_receipt_2.pdf",
+    "extracted_data": {},
+    "vendor_name": "Alstom Transport India",
+    "date_received": "2026-06-12",
+    "unit_price": "12500.00",
+    "total_cost": "187500.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-33412",
+    "vendor_code": "V-ALST-04",
+    "hsn_code": "85308000",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11006",
+    "po_at_no": "PO-RDSO-33412",
+    "pl_no": "PL-8530-02",
+    "barcode_image": "barcodes/barcode_6.png",
+    "barcode_data": "SR-00000006",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.227Z",
+    "updated_at": "2026-07-07T11:27:20.247Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 24,
+  "fields": {
+    "serial_number": 7,
+    "material_name": "Prestressed Concrete Sleepers (S-Type)",
+    "quantity": "350.00",
+    "receipt_pdf": "receipts/mock_receipt_3.pdf",
+    "extracted_data": {},
+    "vendor_name": "Deccan Concrete Products Ltd",
+    "date_received": "2026-06-15",
+    "unit_price": "620.00",
+    "total_cost": "217000.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-40129",
+    "vendor_code": "V-DECC-08",
+    "hsn_code": "68109100",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11007",
+    "po_at_no": "PO-RDSO-40129",
+    "pl_no": "PL-6810-01",
+    "barcode_image": "barcodes/barcode_7.png",
+    "barcode_data": "SR-00000007",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.252Z",
+    "updated_at": "2026-07-07T11:27:20.264Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 25,
+  "fields": {
+    "serial_number": 8,
+    "material_name": "Standard Steel Fish Plates (60kg Rail)",
+    "quantity": "240.00",
+    "receipt_pdf": "receipts/mock_receipt_4.pdf",
+    "extracted_data": {},
+    "vendor_name": "Jindal Steel & Power Ltd",
+    "date_received": "2026-06-18",
+    "unit_price": "290.00",
+    "total_cost": "69600.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-51289",
+    "vendor_code": "V-JIND-77",
+    "hsn_code": "73024000",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11008",
+    "po_at_no": "PO-RDSO-51289",
+    "pl_no": "PL-7302-05",
+    "barcode_image": "barcodes/barcode_8.png",
+    "barcode_data": "SR-00000008",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.269Z",
+    "updated_at": "2026-07-07T11:27:20.281Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 26,
+  "fields": {
+    "serial_number": 9,
+    "material_name": "Copper Contact Wire (107 sq mm)",
+    "quantity": "12.00",
+    "receipt_pdf": "receipts/mock_receipt.pdf",
+    "extracted_data": {},
+    "vendor_name": "Hindalco Industries Ltd",
+    "date_received": "2026-06-20",
+    "unit_price": "42000.00",
+    "total_cost": "504000.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-60312",
+    "vendor_code": "V-HIND-01",
+    "hsn_code": "74081190",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11009",
+    "po_at_no": "PO-RDSO-60312",
+    "pl_no": "PL-7408-01",
+    "barcode_image": "barcodes/barcode_9.png",
+    "barcode_data": "SR-00000009",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.286Z",
+    "updated_at": "2026-07-07T11:27:20.297Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 27,
+  "fields": {
+    "serial_number": 10,
+    "material_name": "Solid Locomotive Coached Wheels",
+    "quantity": "25.00",
+    "receipt_pdf": "receipts/mock_receipt_2.pdf",
+    "extracted_data": {},
+    "vendor_name": "Steel Authority of India Ltd (SAIL)",
+    "date_received": "2026-06-22",
+    "unit_price": "18500.00",
+    "total_cost": "462500.00",
+    "description": null,
+    "category": null,
+    "ro_number": "RO-70198",
+    "vendor_code": "V-SAIL-50",
+    "hsn_code": "86071910",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "Central Stores Depot, RDSO",
+    "r_note_no": "RNOTE-11010",
+    "po_at_no": "PO-RDSO-70198",
+    "pl_no": "PL-8607-01",
+    "barcode_image": "barcodes/barcode_10.png",
+    "barcode_data": "SR-00000010",
+    "uploaded_by": 11,
+    "uploaded_at": "2026-07-07T11:27:20.301Z",
+    "updated_at": "2026-07-07T11:27:20.312Z"
+  }
+},
+{
+  "model": "documents.material",
+  "pk": 28,
+  "fields": {
+    "serial_number": 11,
+    "material_name": "POWERWIN 6A Non Modular Piano Type Domestic Switch Brand: POWERWIN",
+    "quantity": "1400.00",
+    "receipt_pdf": "receipts/vendor_pdf_BRTZeIy.pdf",
+    "extracted_data": {
+      "pl_no": "42022460",
+      "hsn_code": "02025127",
+      "po_at_no": "LP261045200210",
+      "quantity": "1400",
+      "consignee": "000100-Central Stores Depot, RDSO",
+      "r_note_no": "0126100082",
+      "ro_number": "01027",
+      "total_cost": "15610.00",
+      "unit_price": "11.15",
+      "vendor_code": "GEM27304",
+      "vendor_name": "M/s DEEPAK ELECTRIC CO",
+      "date_received": "2026-06-09",
+      "material_name": "POWERWIN 6A Non Modular Piano Type Domestic Switch Brand: POWERWIN",
+      "invoice_number": "details"
+    },
+    "vendor_name": "M/s DEEPAK ELECTRIC CO",
+    "date_received": "2026-06-09",
+    "unit_price": "11.15",
+    "total_cost": "15610.00",
+    "description": null,
+    "category": null,
+    "ro_number": "01027",
+    "vendor_code": "GEM27304",
+    "hsn_code": "02025127",
+    "storage_location": null,
+    "condition_notes": null,
+    "expiry_date": null,
+    "consignee": "000100-Central Stores Depot, RDSO",
+    "r_note_no": "0126100082",
+    "po_at_no": "LP261045200210",
+    "pl_no": "42022460",
+    "barcode_image": "barcodes/barcode_11.png",
+    "barcode_data": "SR-00000011",
+    "uploaded_by": 20,
+    "uploaded_at": "2026-07-07T11:28:27.919Z",
+    "updated_at": "2026-07-07T11:28:27.976Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 18,
+  "fields": {
+    "material": 18,
+    "available_quantity": "108.00",
+    "last_updated": "2026-07-07T13:00:11.941Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 19,
+  "fields": {
+    "material": 19,
+    "available_quantity": "45.00",
+    "last_updated": "2026-07-07T11:27:20.152Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 20,
+  "fields": {
+    "material": 20,
+    "available_quantity": "200.00",
+    "last_updated": "2026-07-07T11:27:20.171Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 21,
+  "fields": {
+    "material": 21,
+    "available_quantity": "377.00",
+    "last_updated": "2026-07-07T11:33:20.007Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 22,
+  "fields": {
+    "material": 22,
+    "available_quantity": "80.00",
+    "last_updated": "2026-07-07T11:27:20.212Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 23,
+  "fields": {
+    "material": 23,
+    "available_quantity": "15.00",
+    "last_updated": "2026-07-07T11:27:20.229Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 24,
+  "fields": {
+    "material": 24,
+    "available_quantity": "350.00",
+    "last_updated": "2026-07-07T11:27:20.254Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 25,
+  "fields": {
+    "material": 25,
+    "available_quantity": "240.00",
+    "last_updated": "2026-07-07T11:27:20.271Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 26,
+  "fields": {
+    "material": 26,
+    "available_quantity": "12.00",
+    "last_updated": "2026-07-07T11:27:20.288Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 27,
+  "fields": {
+    "material": 27,
+    "available_quantity": "25.00",
+    "last_updated": "2026-07-07T11:27:20.302Z"
+  }
+},
+{
+  "model": "documents.inventorybalance",
+  "pk": 28,
+  "fields": {
+    "material": 28,
+    "available_quantity": "1388.00",
+    "last_updated": "2026-07-07T12:08:02.860Z"
+  }
+},
+{
+  "model": "documents.inventorytransaction",
+  "pk": 10,
+  "fields": {
+    "material": 28,
+    "action": "INITIAL",
+    "quantity": "1400.00",
+    "directorate": "Vendor Receipt",
+    "return_reason": null,
+    "remarks": "Initial stock from vendor receipt",
+    "transaction_by": 20,
+    "transaction_date": "2026-07-07T11:28:27.993Z",
+    "ip_address": "127.0.0.1"
+  }
+},
+{
+  "model": "documents.inventorytransaction",
+  "pk": 11,
+  "fields": {
+    "material": 21,
+    "action": "TAKE",
+    "quantity": "123.00",
+    "directorate": "Telecom",
+    "return_reason": null,
+    "remarks": "",
+    "transaction_by": 1,
+    "transaction_date": "2026-07-07T11:33:20.040Z",
+    "ip_address": "127.0.0.1"
+  }
+},
+{
+  "model": "documents.inventorytransaction",
+  "pk": 12,
+  "fields": {
+    "material": 28,
+    "action": "TAKE",
+    "quantity": "12.00",
+    "directorate": "electrical",
+    "return_reason": null,
+    "remarks": "",
+    "transaction_by": 20,
+    "transaction_date": "2026-07-07T12:08:02.878Z",
+    "ip_address": "127.0.0.1"
+  }
+},
+{
+  "model": "documents.inventorytransaction",
+  "pk": 13,
+  "fields": {
+    "material": 18,
+    "action": "TAKE",
+    "quantity": "12.00",
+    "directorate": "Civil",
+    "return_reason": null,
+    "remarks": "",
+    "transaction_by": 1,
+    "transaction_date": "2026-07-07T13:00:11.976Z",
+    "ip_address": "127.0.0.1"
+  }
+}
+]
