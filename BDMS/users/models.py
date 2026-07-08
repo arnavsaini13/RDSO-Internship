@@ -36,5 +36,7 @@ class UserProfile(models.Model):
 # Signal to automatically create user profile when user is created
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
+    if kwargs.get('raw', False):
+        return
     if created:
         UserProfile.objects.get_or_create(user=instance)
