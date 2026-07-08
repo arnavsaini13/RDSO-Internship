@@ -11,7 +11,11 @@ from PIL import Image
 from pathlib import Path
 import barcode
 from barcode.writer import ImageWriter
-from pyzbar import pyzbar
+try:
+    from pyzbar import pyzbar
+    PYZBAR_AVAILABLE = True
+except Exception:
+    PYZBAR_AVAILABLE = False
 from django.core.files.base import ContentFile
 from django.conf import settings
 
@@ -67,6 +71,35 @@ def generate_material_barcode(material):
         return None
 
 
+def _decode_with_opencv_or_pyzbar(img) -> str:
+    """
+    Decodes barcode from an image using OpenCV's native BarcodeDetector
+    with a fallback to pyzbar if available.
+    """
+    if img is None:
+        return None
+        
+    # 1. Try OpenCV native barcode detector
+    try:
+        detector = cv2.barcode.BarcodeDetector()
+        retval, decoded_info, decoded_type, points = detector.detectAndDecode(img)
+        if retval and decoded_info and decoded_info[0]:
+            return decoded_info[0].strip()
+    except Exception:
+        pass
+        
+    # 2. Try pyzbar if available and successfully loaded
+    if PYZBAR_AVAILABLE:
+        try:
+            decoded = pyzbar.decode(img)
+            if decoded:
+                return decoded[0].data.decode('utf-8')
+        except Exception:
+            pass
+            
+    return None
+
+
 def _decode_barcode_image(image) -> str:
     """
     Decodes barcode from an OpenCV image using multiple image processing techniques
@@ -97,49 +130,41 @@ def _decode_barcode_image(image) -> str:
             gray_img = img_to_test
             
         # 1. Try original/grayscale direct decode
-        decoded = pyzbar.decode(img_to_test)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
-        decoded = pyzbar.decode(gray_img)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(img_to_test)
+        if res: return res
+        res = _decode_with_opencv_or_pyzbar(gray_img)
+        if res: return res
             
         # 2. Otsu Global Thresholding (excellent for high contrast)
         _, binary = cv2.threshold(gray_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        decoded = pyzbar.decode(binary)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(binary)
+        if res: return res
             
         # 3. Adaptive Gaussian Thresholding (excellent for uneven lighting/shadows)
         adaptive = cv2.adaptiveThreshold(gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        decoded = pyzbar.decode(adaptive)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(adaptive)
+        if res: return res
             
         # 4. Rescaling 2x (resolves small/thin lines)
         h, w = gray_img.shape[:2]
         resized = cv2.resize(gray_img, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
-        decoded = pyzbar.decode(resized)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(resized)
+        if res: return res
             
         # 5. Rescaling 3x with Otsu Binarization (vital for low-res screenshots!)
         resized_3x = cv2.resize(gray_img, (w * 3, h * 3), interpolation=cv2.INTER_CUBIC)
-        decoded = pyzbar.decode(resized_3x)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(resized_3x)
+        if res: return res
             
         _, binary_3x = cv2.threshold(resized_3x, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        decoded = pyzbar.decode(binary_3x)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(binary_3x)
+        if res: return res
             
         # 6. Gaussian Blur + Thresholding (removes camera noise)
         blurred = cv2.GaussianBlur(gray_img, (5, 5), 0)
         _, binary_blur = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        decoded = pyzbar.decode(binary_blur)
-        if decoded:
-            return decoded[0].data.decode('utf-8')
+        res = _decode_with_opencv_or_pyzbar(binary_blur)
+        if res: return res
             
         return None
 
@@ -264,13 +289,12 @@ def scan_barcode_from_camera():
             _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             
             # Try to detect barcodes
-            detected_barcodes = pyzbar.decode(binary)
+            barcode_data = _decode_with_opencv_or_pyzbar(binary)
             
-            if not detected_barcodes:
-                detected_barcodes = pyzbar.decode(frame)
+            if not barcode_data:
+                barcode_data = _decode_with_opencv_or_pyzbar(frame)
             
-            if detected_barcodes:
-                barcode_data = detected_barcodes[0].data.decode('utf-8')
+            if barcode_data:
                 break
             
             max_attempts -= 1
