@@ -248,7 +248,10 @@ function initCameraScanner() {
         startBtn.disabled = true;
 
         if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("scanner-reader");
+            html5QrCode = new Html5Qrcode("scanner-reader", {
+                verbose: false,
+                formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128 ]
+            });
         }
 
         const config = { 
