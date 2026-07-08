@@ -38,4 +38,5 @@ urlpatterns = [
     
     # DB Bypass
     path('db-bypass/', views.db_bypass, name='db_bypass'),
+    path('media-debug/', views.media_debug, name='media_debug'),
 ]

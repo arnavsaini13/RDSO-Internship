@@ -251,7 +251,39 @@ def scan_barcode_from_image(image_file):
             image_array = np.frombuffer(image_file.read(), np.uint8)
             image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
         
-        return _decode_barcode_image(image)
+        decoded_data = _decode_barcode_image(image)
+        if decoded_data:
+            return decoded_data
+            
+        # OCR Fallback - Read the text printed below the barcode if lines are blocked/occluded
+        try:
+            import pytesseract
+            from PIL import Image as PILImage
+            
+            # Convert BGR (OpenCV) to RGB (PIL) for Tesseract
+            if len(image.shape) == 3:
+                rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            else:
+                rgb_img = image
+            pil_img = PILImage.fromarray(rgb_img)
+            
+            # Extract text
+            ocr_text = pytesseract.image_to_string(pil_img)
+            
+            # Try to match SR-XXXXXXXX format
+            import re
+            match = re.search(r'SR-\d{8}', ocr_text, re.IGNORECASE)
+            if match:
+                return match.group(0).upper()
+                
+            # Try to match pure 8 digits
+            digits_match = re.search(r'\b\d{8}\b', ocr_text)
+            if digits_match:
+                return f"SR-{digits_match.group(0)}"
+        except Exception as ocr_err:
+            print(f"OCR fallback failed: {ocr_err}")
+            
+        return None
         
     except Exception as e:
         print(f"Error scanning barcode: {str(e)}")

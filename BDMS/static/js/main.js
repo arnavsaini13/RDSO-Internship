@@ -341,37 +341,7 @@ function initCameraScanner() {
         }
     }
 
-    // Handle File Upload client-side scanning
-    const fileInput = document.getElementById('barcodeImage');
-    const uploadForm = fileInput ? fileInput.closest('form') : null;
-    
-    if (fileInput && uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent standard POST submit
-            
-            if (fileInput.files.length === 0) return;
-            const file = fileInput.files[0];
-            
-            const tempReader = new Html5Qrcode("scanner-reader");
-            
-            resultsContainer.innerHTML = `<div class="text-center py-4"><span class="spinner-border text-primary"></span><p class="mt-2 text-muted">Analyzing barcode image client-side...</p></div>`;
-            
-            tempReader.scanFile(file, true)
-                .then(decodedText => {
-                    tempReader.clear();
-                    onScanSuccess(decodedText);
-                })
-                .catch(err => {
-                    console.error("Local file scan failed:", err);
-                    tempReader.clear();
-                    resultsContainer.innerHTML = `
-                        <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i> Could not detect any clear barcode in this image. Please ensure the barcode is well-lit, not blurry, and fully visible.
-                        </div>
-                    `;
-                });
-        });
-    }
+
 
     function renderScannerMatch(material) {
         if (!resultsContainer) return;

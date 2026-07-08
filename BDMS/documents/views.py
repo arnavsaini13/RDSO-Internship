@@ -820,3 +820,24 @@ def db_bypass(request):
         
     return redirect('/admin/documents/material/')
 
+
+def media_debug(request):
+    """Diagnose media directory contents and configurations on the server"""
+    import os
+    from django.conf import settings
+    from django.http import JsonResponse
+    
+    media_files = []
+    if os.path.exists(settings.MEDIA_ROOT):
+        for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+            for file in files:
+                rel_path = os.path.relpath(os.path.join(root, file), settings.MEDIA_ROOT)
+                media_files.append(rel_path)
+                
+    return JsonResponse({
+        'media_root': str(settings.MEDIA_ROOT),
+        'exists': os.path.exists(settings.MEDIA_ROOT),
+        'files': media_files,
+        'media_url': settings.MEDIA_URL,
+    })
+
