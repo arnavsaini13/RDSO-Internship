@@ -19,11 +19,8 @@ try:
     material_count = Material.objects.count()
     print(f"[WSGI-BOOTSTRAP] Detected {material_count} materials.")
     if material_count < 11:
-        print("[WSGI-BOOTSTRAP] Database lacks the 11 local items. Clearing and loading db_dump.json...")
-        Material.objects.all().delete()
-        from users.models import UserProfile
-        UserProfile.objects.all().delete()
-        User.objects.all().delete()
+        print("[WSGI-BOOTSTRAP] Database lacks the 11 local items. Flushing and loading db_dump.json...")
+        call_command('flush', no_input=True)
         call_command('loaddata', 'db_dump.json')
         print("[WSGI-BOOTSTRAP] Database loaded successfully.")
         
