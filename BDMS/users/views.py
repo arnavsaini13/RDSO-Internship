@@ -17,6 +17,27 @@ from .utils import create_user_profile, get_client_ip
 
 logger = logging.getLogger(__name__)
 
+import threading
+
+def send_email_async(subject, message, from_email, recipient_list):
+    """Send emails in a background thread to prevent Gunicorn thread blocks and timeouts"""
+    def run_send():
+        try:
+            send_mail(
+                subject,
+                message,
+                from_email,
+                recipient_list,
+                fail_silently=False,
+            )
+            logger.info(f"[ASYNC-EMAIL] Successfully sent email to {recipient_list}")
+        except Exception as e:
+            logger.error(f"[ASYNC-EMAIL] Failed to send email to {recipient_list}: {e}")
+            
+    thread = threading.Thread(target=run_send)
+    thread.daemon = True
+    thread.start()
+
 
 @require_http_methods(["GET", "POST"])
 def login_view(request):
@@ -125,18 +146,12 @@ def verify_link_view(request, token):
         email_failed = True
         logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
     else:
-        try:
-            send_mail(
-                subject,
-                message,
-                from_email,
-                [email],
-                fail_silently=False,
-            )
-            logger.info(f"Temporary password sent to {email} successfully.")
-        except Exception as e:
-            logger.error(f"Failed to send temporary password email to {email}: {e}")
-            email_failed = True
+        send_email_async(
+            subject,
+            message,
+            from_email,
+            [email],
+        )
 
     if email_failed:
         return render(request, 'users/verification_success.html', {
@@ -232,18 +247,12 @@ def signup(request):
                 email_failed = True
                 logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
             else:
-                try:
-                    send_mail(
-                        subject,
-                        message,
-                        from_email,
-                        [email],
-                        fail_silently=False,
-                    )
-                    logger.info(f"Verification email sent to {email} successfully.")
-                except Exception as e:
-                    logger.error(f"Failed to send verification email to {email}: {e}")
-                    email_failed = True
+                send_email_async(
+                    subject,
+                    message,
+                    from_email,
+                    [email],
+                )
                 
             return render(request, 'users/link_sent.html', {
                 'email': email,
