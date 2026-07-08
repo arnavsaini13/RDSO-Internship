@@ -141,28 +141,22 @@ def verify_link_view(request, token):
     )
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@rdso.railnet.gov.in')
     
-    email_failed = False
-    if not getattr(settings, 'EMAIL_HOST_USER', None):
-        email_failed = True
-        logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
-    else:
+    if getattr(settings, 'EMAIL_HOST_USER', None):
         send_email_async(
             subject,
             message,
             from_email,
             [email],
         )
-
-    if email_failed:
-        return render(request, 'users/verification_success.html', {
-            'username': profile.username,
-            'email': email,
-            'temp_password': temp_password,
-            'page_title': 'Account Verified'
-        })
     else:
-        messages.success(request, "Email verified successfully! We have sent your temporary login password to your registered email.")
-        return redirect('users:login')
+        logger.warning("EMAIL_HOST_USER is not configured. Skipping email send.")
+
+    return render(request, 'users/verification_success.html', {
+        'username': profile.username,
+        'email': email,
+        'temp_password': temp_password,
+        'page_title': 'Account Verified'
+    })
 
 
 @login_required(login_url='users:login')
