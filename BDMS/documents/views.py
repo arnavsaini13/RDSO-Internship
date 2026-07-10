@@ -559,6 +559,7 @@ def scan_barcode(request):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
+                    'id': material.id,
                     'barcode': barcode_data,
                     'serial_number': material.serial_number,
                     'material_name': material.material_name,
@@ -589,6 +590,7 @@ def scan_barcode(request):
                         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                             return JsonResponse({
                                 'success': True,
+                                'id': material.id,
                                 'barcode': barcode_data,
                                 'serial_number': material.serial_number,
                                 'material_name': material.material_name,

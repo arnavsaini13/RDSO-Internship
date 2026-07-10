@@ -237,17 +237,27 @@ function initCameraScanner() {
     if (!readerElement || !startBtn) return;
 
     let html5QrCode = null;
+    let ocrWorker = null;
     let ocrInterval = null;
     let isProcessingOCR = false;
 
-    startBtn.addEventListener('click', function() {
+    startBtn.addEventListener('click', async function() {
         if (html5QrCode && html5QrCode.isScanning) {
-            stopScanner();
+            await stopScanner();
             return;
         }
 
-        startBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Initializing Camera...`;
+        startBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Initializing Camera & OCR...`;
         startBtn.disabled = true;
+
+        try {
+            if (!ocrWorker) {
+                // Initialize the worker once and reuse it for highly-performant OCR frames!
+                ocrWorker = await Tesseract.createWorker('eng');
+            }
+        } catch (err) {
+            console.error("OCR worker initialization failed:", err);
+        }
 
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("scanner-reader");
@@ -274,13 +284,13 @@ function initCameraScanner() {
             startBtn.classList.add('btn-gov-danger');
             if (scanBar) scanBar.style.display = 'block';
 
-            // Start live OCR processing loop in the background
-            ocrInterval = setInterval(() => {
+            // Start live OCR processing loop in the background (every 1 second)
+            ocrInterval = setInterval(async () => {
                 const video = readerElement.querySelector('video');
                 if (video && video.readyState === video.HAVE_CURRENT_DATA) {
-                    runLiveOCR(video);
+                    await runLiveOCR(video);
                 }
-            }, 1200);
+            }, 1000);
         })
         .catch(err => {
             console.error("Camera access failed:", err);
@@ -290,15 +300,27 @@ function initCameraScanner() {
         });
     });
 
-    function stopScanner() {
+    async function stopScanner() {
         if (ocrInterval) {
             clearInterval(ocrInterval);
             ocrInterval = null;
         }
+        if (ocrWorker) {
+            try {
+                await ocrWorker.terminate();
+            } catch (err) {
+                console.error("Failed to terminate worker:", err);
+            }
+            ocrWorker = null;
+        }
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
+            try {
+                await html5QrCode.stop();
                 resetUI();
-            }).catch(err => console.error("Failed to stop scanner:", err));
+            } catch (err) {
+                console.error("Failed to stop html5QrCode:", err);
+                resetUI();
+            }
         } else {
             resetUI();
         }
@@ -355,32 +377,31 @@ function initCameraScanner() {
         }
     }
 
-    function runLiveOCR(video) {
-        if (isProcessingOCR) return;
+    async function runLiveOCR(video) {
+        if (isProcessingOCR || !ocrWorker) return;
         isProcessingOCR = true;
         
-        // Draw center crop of video feed to optimize OCR text matching
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Focus OCR on the reticle area (center 70% width, 50% height)
-        const cropW = Math.floor(canvas.width * 0.7);
-        const cropH = Math.floor(canvas.height * 0.5);
-        const cropX = Math.floor((canvas.width - cropW) / 2);
-        const cropY = Math.floor((canvas.height - cropH) / 2);
-        
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = cropW;
-        cropCanvas.height = cropH;
-        const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-        
-        Tesseract.recognize(cropCanvas, 'eng')
-        .then(({ data: { text } }) => {
-            isProcessingOCR = false;
+        try {
+            // Draw center crop of video feed to optimize OCR text matching
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Focus OCR on the reticle area (center 70% width, 50% height)
+            const cropW = Math.floor(canvas.width * 0.7);
+            const cropH = Math.floor(canvas.height * 0.5);
+            const cropX = Math.floor((canvas.width - cropW) / 2);
+            const cropY = Math.floor((canvas.height - cropH) / 2);
+            
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = cropW;
+            cropCanvas.height = cropH;
+            const cropCtx = cropCanvas.getContext('2d');
+            cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            
+            const { data: { text } } = await ocrWorker.recognize(cropCanvas);
             console.log("Live OCR Extracted Text:", text);
             
             // Match SR-XXXXXXXX format
@@ -399,7 +420,7 @@ function initCameraScanner() {
                 console.log("Live OCR found material ID:", barcodeData);
                 // Success! Play beep, stop scanner, fetch material details
                 playBeep();
-                stopScanner();
+                await stopScanner();
                 
                 fetch(`?barcode=${encodeURIComponent(barcodeData)}`, {
                     headers: {
@@ -416,11 +437,11 @@ function initCameraScanner() {
                 })
                 .catch(err => console.error("Live OCR lookup failed:", err));
             }
-        })
-        .catch(err => {
-            isProcessingOCR = false;
+        } catch (err) {
             console.error("Live OCR error:", err);
-        });
+        } finally {
+            isProcessingOCR = false;
+        }
     }
 
     function renderScannerMatch(material) {
@@ -453,7 +474,7 @@ function initCameraScanner() {
                         </div>
                     </div>
                     <div class="d-grid mt-4">
-                        <a href="/material/${material.serial_number}/" class="btn btn-gov-primary text-uppercase font-weight-bold">
+                        <a href="/material/${material.id}/" class="btn btn-gov-primary text-uppercase font-weight-bold">
                             Open Material Workspace <i class="bi bi-box-seam"></i>
                         </a>
                     </div>
