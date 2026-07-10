@@ -43,5 +43,15 @@ def main():
     except Exception as e:
         print(f"[BOOTSTRAP] ERROR setting admin password: {e}")
 
+    # 5. Delete specific user accounts requested by user (arnav25100@iiitnr.edu.in and arnav131106@gmail.com)
+    try:
+        deleted_count, details = User.objects.filter(email__in=['arnav25100@iiitnr.edu.in', 'arnav131106@gmail.com']).delete()
+        if deleted_count > 0:
+            print(f"[BOOTSTRAP] Successfully deleted {deleted_count} user accounts from Render database: {details}")
+        else:
+            print("[BOOTSTRAP] Requested user accounts for deletion were not found or already deleted.")
+    except Exception as e:
+        print(f"[BOOTSTRAP] ERROR deleting requested user accounts: {e}")
+
 if __name__ == '__main__':
     main()
