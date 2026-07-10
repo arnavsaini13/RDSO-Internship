@@ -6,6 +6,7 @@
 {% block content %}
 {% block extra_js %}
 <script src="{% static 'js/html5-qrcode.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 {% endblock %}
 
 <div class="dashboard-container">
@@ -56,7 +57,7 @@
                         <h5 class="mb-0 fw-bold" style="color: var(--primary-navy);"><i class="bi bi-upload"></i> Upload Barcode Image</h5>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" enctype="multipart/form-data" action="{% url 'documents:scan_barcode' %}">
+                        <form id="upload-barcode-form" method="POST" enctype="multipart/form-data" action="{% url 'documents:scan_barcode' %}">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="barcodeImage" class="form-label font-weight-bold" style="color: var(--primary-navy);">Select Barcode Image (JPG/PNG) or PDF Label</label>

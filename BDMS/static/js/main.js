@@ -237,6 +237,8 @@ function initCameraScanner() {
     if (!readerElement || !startBtn) return;
 
     let html5QrCode = null;
+    let ocrInterval = null;
+    let isProcessingOCR = false;
 
     startBtn.addEventListener('click', function() {
         if (html5QrCode && html5QrCode.isScanning) {
@@ -271,6 +273,14 @@ function initCameraScanner() {
             startBtn.classList.remove('btn-gov-primary');
             startBtn.classList.add('btn-gov-danger');
             if (scanBar) scanBar.style.display = 'block';
+
+            // Start live OCR processing loop in the background
+            ocrInterval = setInterval(() => {
+                const video = readerElement.querySelector('video');
+                if (video && video.readyState === video.HAVE_CURRENT_DATA) {
+                    runLiveOCR(video);
+                }
+            }, 1200);
         })
         .catch(err => {
             console.error("Camera access failed:", err);
@@ -281,6 +291,10 @@ function initCameraScanner() {
     });
 
     function stopScanner() {
+        if (ocrInterval) {
+            clearInterval(ocrInterval);
+            ocrInterval = null;
+        }
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().then(() => {
                 resetUI();
@@ -341,7 +355,73 @@ function initCameraScanner() {
         }
     }
 
-
+    function runLiveOCR(video) {
+        if (isProcessingOCR) return;
+        isProcessingOCR = true;
+        
+        // Draw center crop of video feed to optimize OCR text matching
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Focus OCR on the reticle area (center 70% width, 50% height)
+        const cropW = Math.floor(canvas.width * 0.7);
+        const cropH = Math.floor(canvas.height * 0.5);
+        const cropX = Math.floor((canvas.width - cropW) / 2);
+        const cropY = Math.floor((canvas.height - cropH) / 2);
+        
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = cropW;
+        cropCanvas.height = cropH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        
+        Tesseract.recognize(cropCanvas, 'eng')
+        .then(({ data: { text } }) => {
+            isProcessingOCR = false;
+            console.log("Live OCR Extracted Text:", text);
+            
+            // Match SR-XXXXXXXX format
+            let match = text.match(/SR-\d{8}/i);
+            let barcodeData = null;
+            if (match) {
+                barcodeData = match[0].toUpperCase();
+            } else {
+                let digitsMatch = text.match(/\b\d{8}\b/);
+                if (digitsMatch) {
+                    barcodeData = `SR-${digitsMatch[0]}`;
+                }
+            }
+            
+            if (barcodeData) {
+                console.log("Live OCR found material ID:", barcodeData);
+                // Success! Play beep, stop scanner, fetch material details
+                playBeep();
+                stopScanner();
+                
+                fetch(`?barcode=${encodeURIComponent(barcodeData)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderScannerMatch(data);
+                    } else {
+                        alert(`Detected text: ${barcodeData}\nError: ${data.error}`);
+                    }
+                })
+                .catch(err => console.error("Live OCR lookup failed:", err));
+            }
+        })
+        .catch(err => {
+            isProcessingOCR = false;
+            console.error("Live OCR error:", err);
+        });
+    }
 
     function renderScannerMatch(material) {
         if (!resultsContainer) return;
@@ -381,5 +461,92 @@ function initCameraScanner() {
             </div>
         `;
         resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- Client-Side Image OCR File Upload Interceptor ---
+    const uploadForm = document.getElementById('upload-barcode-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('barcodeImage');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                // If it is a PDF document, let the Django backend do PDF layout processing
+                if (file.name.toLowerCase().endsWith('.pdf')) {
+                    return;
+                }
+                
+                // Intercept image files (PNG/JPG) for instant browser-level OCR
+                e.preventDefault();
+                
+                const submitBtn = uploadForm.querySelector('button[type="submit"]');
+                const originalBtnHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Reading text under barcode...`;
+                
+                Tesseract.recognize(file, 'eng')
+                .then(({ data: { text } }) => {
+                    console.log("Image OCR Extracted Text:", text);
+                    
+                    let match = text.match(/SR-\d{8}/i);
+                    let barcodeData = null;
+                    if (match) {
+                        barcodeData = match[0].toUpperCase();
+                    } else {
+                        let digitsMatch = text.match(/\b\d{8}\b/);
+                        if (digitsMatch) {
+                            barcodeData = `SR-${digitsMatch[0]}`;
+                        }
+                    }
+                    
+                    if (barcodeData) {
+                        fetch(`?barcode=${encodeURIComponent(barcodeData)}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnHtml;
+                            
+                            if (data.success) {
+                                renderScannerMatch(data);
+                            } else {
+                                renderError(data.error || `Material not found for barcode: ${barcodeData}`);
+                            }
+                        })
+                        .catch(err => {
+                            console.error("AJAX lookup failed:", err);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnHtml;
+                            uploadForm.submit();
+                        });
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnHtml;
+                        // Fall back to native backend scan if OCR couldn't read the text
+                        uploadForm.submit();
+                    }
+                })
+                .catch(err => {
+                    console.error("Client OCR failed:", err);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                    uploadForm.submit();
+                });
+            }
+        });
+    }
+
+    function renderError(message) {
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="alert alert-danger border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> ${message}
+                </div>
+            `;
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 }
