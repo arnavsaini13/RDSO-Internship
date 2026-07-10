@@ -37,8 +37,8 @@
                     <h6 class="font-weight-bold text-uppercase text-muted mb-3">Auto-Generated Barcode</h6>
                     
                     <div class="p-3 bg-light border rounded mb-3" style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
-                        {% if material.barcode_image %}
-                            <img src="{{ material.barcode_image.url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid" style="max-height: 80px;">
+                        {% if material.safe_barcode_image_url %}
+                            <img src="{{ material.safe_barcode_image_url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid" style="max-height: 80px;">
                         {% else %}
                             <div class="text-muted small">
                                 <i class="bi bi-qr-code display-4 mb-2 d-block"></i>

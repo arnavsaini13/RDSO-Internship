@@ -47,8 +47,9 @@ class MaterialAdmin(admin.ModelAdmin):
     get_uploaded_by.short_description = 'Uploaded By'
 
     def display_barcode(self, obj):
-        if obj.barcode_image:
-            return format_html('<img src="{}" style="height: 35px; max-width: 150px; display: block;" />', obj.barcode_image.url)
+        url = obj.safe_barcode_image_url
+        if url:
+            return format_html('<img src="{}" style="height: 35px; max-width: 150px; display: block;" />', url)
         return "-"
     display_barcode.short_description = 'Barcode'
 

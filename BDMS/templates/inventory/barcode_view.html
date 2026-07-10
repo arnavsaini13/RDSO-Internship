@@ -17,8 +17,8 @@
                 </div>
                 
                 <div class="p-4 bg-light border rounded mb-3 d-flex flex-column align-items-center justify-content-center">
-                    {% if material.barcode_image %}
-                        <img src="{{ material.barcode_image.url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid mb-2" style="max-height: 80px;">
+                    {% if material.safe_barcode_image_url %}
+                        <img src="{{ material.safe_barcode_image_url }}?v={{ material.updated_at.timestamp }}" alt="Material Barcode" class="img-fluid mb-2" style="max-height: 80px;">
                     {% else %}
                         <i class="bi bi-qr-code display-3 mb-2 text-muted"></i>
                     {% endif %}

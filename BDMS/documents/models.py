@@ -91,6 +91,27 @@ class Material(models.Model):
             data.update(self.extracted_data)
         return data
 
+    @property
+    def safe_barcode_image_url(self):
+        """
+        Returns the barcode image URL.
+        Auto-generates the barcode image on disk if it is missing.
+        """
+        if not self.barcode_image or not self.barcode_data:
+            from documents.barcode_utils import generate_material_barcode
+            generate_material_barcode(self)
+            self.save(update_fields=['barcode_image', 'barcode_data'])
+        else:
+            try:
+                if not self.barcode_image.storage.exists(self.barcode_image.name):
+                    from documents.barcode_utils import generate_material_barcode
+                    generate_material_barcode(self)
+                    self.save(update_fields=['barcode_image', 'barcode_data'])
+            except Exception:
+                pass
+                
+        return self.barcode_image.url if self.barcode_image else ""
+
 
 class InventoryBalance(models.Model):
     """Current Inventory Balance - Shows Latest Available Quantity Only"""
